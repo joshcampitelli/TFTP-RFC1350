@@ -18,8 +18,11 @@ import java.util.Arrays;
 public class Client {
 
     public static byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public static int SERVER_PORT = 23;
+    public static int SERVER_PORT = 23, INTERMEDIATE_PORT = 69;
     private SRSocket sendReceive;
+
+    private int connectionMode;
+    public static int MODE_NORMAL = 1, MODE_TEST = 2;
 
     public Client() throws IOException {
         this.sendReceive = new SRSocket("Client");
@@ -67,9 +70,19 @@ public class Client {
         return request;
     }
 
+    public void setMode(int mode) {
+        this.connectionMode = mode;
+    }
+
+    public int getMode() {
+        return this.connectionMode;
+    }
+
     public static void main(String[] args) {
         try {
             Client client = new Client();
+            client.setMode(MODE_TEST);
+
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = client.getInput("Enter mode: ").getBytes();
             byte[] request;
@@ -79,9 +92,14 @@ public class Client {
                 rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
                 request = client.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
 
-                DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), 23);
+                int port = SERVER_PORT;
+                if (client.getMode() == MODE_TEST) {
+                    port = INTERMEDIATE_PORT;
+                }
+
+                DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
                 client.getSocket().notifyXtra(packet, "Sending packet");
-                client.getSocket().send(InetAddress.getLocalHost(), SERVER_PORT, request);
+                client.getSocket().send(InetAddress.getLocalHost(), port, request);
 
                 System.out.printf("Waiting for response from server...\n");
                 DatagramPacket response = client.getSocket().receive();
