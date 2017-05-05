@@ -18,7 +18,8 @@ import java.util.Arrays;
 public class Client {
 
     public static byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public int serverPort = 23, INTERMEDIATE_PORT = 69;
+	public static int INTERMEDIATE_PORT = 23;
+    public int serverPort = 69;
     private SRSocket sendReceive;
 
     private int connectionMode;
