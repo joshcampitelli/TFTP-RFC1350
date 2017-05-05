@@ -18,7 +18,7 @@ import java.util.Arrays;
 public class Client {
 
     public static byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public static int SERVER_PORT = 23;
+    public static int SERVER_PORT = 23, INTERMEDIATE_PORT = 69;
     private SRSocket sendReceive;
 
     private int connectionMode;
@@ -92,9 +92,9 @@ public class Client {
                 rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
                 request = client.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
 
-                int port = 69;
+                int port = SERVER_PORT;
                 if (client.getMode() == MODE_TEST) {
-                    port = 23;
+                    port = INTERMEDIATE_PORT;
                 }
 
                 DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
