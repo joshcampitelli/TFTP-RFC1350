@@ -18,7 +18,7 @@ import java.util.Arrays;
 public class Client {
 
     public static byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public static int SERVER_PORT = 23, INTERMEDIATE_PORT = 69;
+    public int serverPort = 23, INTERMEDIATE_PORT = 69;
     private SRSocket sendReceive;
 
     private int connectionMode;
@@ -78,27 +78,27 @@ public class Client {
         return this.connectionMode;
     }
 	
-	private void sendRecive(byte[] filename, byte[] mode) throws IOException {
+	private void sendReceive(byte[] filename, byte[] mode) throws IOException {
 			byte[] request;
             byte rw;
 
             for (int i = 0; i <= 10; i++) {
                 rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
-                request = client.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
+                request = this.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
 
-                int port = SERVER_PORT;
-                if (client.getMode() == MODE_TEST) {
+                int port = serverPort;
+                if (this.getMode() == MODE_TEST) {
                     port = INTERMEDIATE_PORT;
                 }
 
                 DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
-                client.getSocket().notifyXtra(packet, "Sending packet");
-                client.getSocket().send(InetAddress.getLocalHost(), port, request);
+                this.getSocket().notifyXtra(packet, "Sending packet");
+                this.getSocket().send(InetAddress.getLocalHost(), port, request);
 
                 System.out.printf("Waiting for response from server...\n");
-                DatagramPacket response = client.getSocket().receive();
-				port = response.getPort();
-                client.getSocket().notifyXtra(response, "Packet Received");
+                DatagramPacket response = this.getSocket().receive();
+				serverPort = response.getPort();
+                this.getSocket().notifyXtra(response, "Packet Received");
             }
 	}
 
@@ -109,7 +109,7 @@ public class Client {
 
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = client.getInput("Enter mode: ").getBytes();
-			sendReceive(filename, mode);
+			client.sendReceive(filename, mode);
 		} catch (IOException e) {
             e.printStackTrace();
         }
