@@ -105,7 +105,7 @@ public class Client {
     public static void main(String[] args) {
         try {
             Client client = new Client();
-            client.setMode(MODE_TEST);
+            client.setMode(MODE_NORMAL);
 
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = client.getInput("Enter mode: ").getBytes();
