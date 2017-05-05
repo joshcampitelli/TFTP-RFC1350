@@ -77,15 +77,9 @@ public class Client {
     public int getMode() {
         return this.connectionMode;
     }
-
-    public static void main(String[] args) {
-        try {
-            Client client = new Client();
-            client.setMode(MODE_TEST);
-
-            byte[] filename = client.getInput("Enter file name: ").getBytes();
-            byte[] mode = client.getInput("Enter mode: ").getBytes();
-            byte[] request;
+	
+	private void sendRecive(byte[] filename, byte[] mode) throws IOException {
+			byte[] request;
             byte rw;
 
             for (int i = 0; i <= 10; i++) {
@@ -103,10 +97,20 @@ public class Client {
 
                 System.out.printf("Waiting for response from server...\n");
                 DatagramPacket response = client.getSocket().receive();
+				port = response.getPort();
                 client.getSocket().notifyXtra(response, "Packet Received");
-
             }
-        } catch (IOException e) {
+	}
+
+    public static void main(String[] args) {
+        try {
+            Client client = new Client();
+            client.setMode(MODE_TEST);
+
+            byte[] filename = client.getInput("Enter file name: ").getBytes();
+            byte[] mode = client.getInput("Enter mode: ").getBytes();
+			sendReceive(filename, mode);
+		} catch (IOException e) {
             e.printStackTrace();
         }
     }
