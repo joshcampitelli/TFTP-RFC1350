@@ -4,27 +4,28 @@ import java.io.IOException;
 
 /**
  *
- * @author Carleton Summer 2017 SYSC 3303A Group 2,000,000
+ * @author Carleton Summer 2017 SYSC 3303A Group 2
  * @since May the 5th, 2017
  */
 public class Connection extends SRSocket implements Runnable {
 
     private String name;
     private DatagramPacket client;
+    private int TID, clientTID;
 
-    public Connection(DatagramPacket packet, String name) throws IOException {
-        super(name);
+    public Connection(DatagramPacket packet) throws IOException {
+        super(String.format("Connection (Client TID: %d)", packet.getPort()));
         this.client = packet;
+        this.TID = this.getPort();
+        this.clientTID = packet.getPort();
     }
 
-    public Connection(DatagramPacket packet, String name, int port) throws IOException {
-        super(name, port, InetAddress.getLocalHost());
-        this.client = packet;
+    public int getTID() {
+        return this.TID;
     }
 
-    public Connection(DatagramPacket packet, String name, int port, InetAddress address) throws IOException {
-        super(name, port, address);
-        this.client = packet;
+    public int getClientTID() {
+        return this.clientTID;
     }
 
     /**

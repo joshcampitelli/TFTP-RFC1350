@@ -35,6 +35,10 @@ public class SRSocket extends DatagramSocket {
         DatagramPacket packet = new DatagramPacket(data, data.length);
         this.receive(packet);
 
+        // reduce the buffer to the size of the data received, if possible
+        data = shrink(packet.getData(), packet.getLength());
+        packet.setData(data);
+
         return packet;
     }
 
@@ -56,5 +60,24 @@ public class SRSocket extends DatagramSocket {
     public void notifyXtra(DatagramPacket packet, String event) {
         this.notify(packet, event);
         System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
+    }
+
+    /**
+     * Shrinks the provided array to a new, specified length. If the new length provided is bigger
+     * than the array's existing size, then the method returns without doing anything.
+     *
+     * @return the shrunk array
+     */
+    private byte[] shrink(byte[] arr, int newLength) {
+        if (newLength > arr.length) {
+            return arr;
+        }
+
+        byte[] arr1 = new byte[newLength];
+        for (int i = 0; i < arr1.length; i++) {
+            arr1[i] = arr[i];
+        }
+
+        return arr1;
     }
 }
