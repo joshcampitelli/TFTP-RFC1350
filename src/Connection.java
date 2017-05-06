@@ -16,7 +16,7 @@ public class Connection extends SRSocket implements Runnable {
     public Connection(DatagramPacket packet) throws IOException {
         super(String.format("Connection (Client TID: %d)", packet.getPort()));
         this.client = packet;
-        this.TID = this.getPort();
+        this.TID = getPort();
         this.clientTID = packet.getPort();
     }
 
@@ -41,13 +41,10 @@ public class Connection extends SRSocket implements Runnable {
         }
     }
 
-    private void acknowledge() throws IOException, InvalidPacketException {
-        byte[] response = parse(client.getData());
-        dispatch(response);
-    }
+    private void process(DatagramPacket request) throws IOException, InvalidPacketException {
+        byte[] response = parse(request.getData());
+        DatagramPacket packet = new DatagramPacket(response, response.length, client.getAddress(), client.getPort());
 
-    private void dispatch(byte[] data) throws IOException {
-        DatagramPacket packet = new DatagramPacket(data, data.length, client.getAddress(), client.getPort());
         notify(packet, "Sending Packet");
         send(packet);
     }
@@ -55,14 +52,12 @@ public class Connection extends SRSocket implements Runnable {
     @Override
     public void run() {
         try {
-            acknowledge();
+            process(client); // acknowledge the first packet to begin the send-receive cycle
 
             while (true) {
                 DatagramPacket packet = receive();
                 notify(packet, "Received Packet");
-
-                byte[] response = parse(packet.getData());
-                dispatch(response);
+                process(packet);
             }
         } catch (IOException | InvalidPacketException e) {
             e.printStackTrace();
