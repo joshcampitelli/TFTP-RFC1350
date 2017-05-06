@@ -1,14 +1,10 @@
 import java.util.Scanner;
 
-import java.net.DatagramSocket;
 import java.net.DatagramPacket;
-import java.net.SocketException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.io.IOException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import core.SRSocket;
 
 /**
  *

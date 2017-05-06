@@ -1,9 +1,9 @@
-import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.Arrays;
+import java.util.HashMap;
 
 import java.io.IOException;
+import core.SRSocket;
 
 /**
  *
@@ -13,16 +13,30 @@ import java.io.IOException;
 
 public class ErrorSimulator {
 
-    private SRSocket receiveSocket;
     private static int RECEIVE_PORT = 23;
     private static int SERVER_PORT = 69;
 
+    private SRSocket receiveSocket;
+    private HashMap<Integer, Integer> router;
+
     public ErrorSimulator() throws IOException {
         this.receiveSocket = new SRSocket("ErrorSimulator, Main Socket 'R'", RECEIVE_PORT);
+        this.router = new HashMap<>();
     }
 
     public SRSocket getReceiveSocket() {
         return this.receiveSocket;
+    }
+
+    public int getDestinationTID(DatagramPacket packet) {
+        int port = packet.getPort();
+        return router.containsKey(port) ? router.get(port) : SERVER_PORT;
+    }
+
+    public void register(int key, int value) {
+        if (router.get(key) == null) {
+            router.put(key, value);
+        }
     }
 
     public DatagramPacket produceFrom(DatagramPacket packet, int port, InetAddress address) {
@@ -40,12 +54,13 @@ public class ErrorSimulator {
             // request received => produce a temporary send/receive socket to fulfill the networking requirements
             SRSocket temp = new SRSocket("IntermediateHost, Temp Socket 'S/R'");
 
-            DatagramPacket server = this.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
+            DatagramPacket server = this.produceFrom(client, getDestinationTID(client), InetAddress.getLocalHost());
             temp.notify(server, "Sending Packet");
             temp.send(server);
 
             DatagramPacket response = temp.receive();
             temp.notify(response, "Received Packet");
+            register(client.getPort(), response.getPort());
 
             DatagramPacket result = this.produceFrom(response, client.getPort(), client.getAddress());
             temp.notify(result, "Sending Packet");
