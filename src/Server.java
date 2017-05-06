@@ -2,8 +2,8 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.Arrays;
-
 import java.io.IOException;
+import java.lang.Thread;
 
 /**
  *
@@ -88,19 +88,15 @@ public class Server {
     /**
      * Parses the DatagramPacket received from the client and produces a response from it accordingly.
      *
-     * @return A DatagramPacket to be sent to the client
-     *
      * @throws InvalidPacketException If the packet has been found to be illegal. Critical error.
      */
-    public DatagramPacket parse(DatagramPacket packet) throws InvalidPacketException {
+    public void establish(DatagramPacket packet) throws IOException, InvalidPacketException {
         if (!validatePacket(packet)) {
             throw new InvalidPacketException("Invalid packet parsed. Aborting...");
         }
 
-        byte[] response = new byte[4];
-        byte[] value = packet.getData()[1] == 1 ? new byte[]{0, 3, 0, 1} : new byte[]{0, 4, 0, 0};
-        System.arraycopy(value, 0, response, 0, value.length);
-        return new DatagramPacket(response, 4, packet.getAddress(), packet.getPort());
+        Connection connection = new Connection(packet, Integer.toString(packet.getPort()));
+        new Thread(connection).start();
     }
 
     public static void main(String[] args) {
@@ -115,13 +111,7 @@ public class Server {
 
                     DatagramPacket packet = server.getReceiveSocket().receive();
                     server.getReceiveSocket().notify(packet, "Received Packet");
-
-                    SRSocket temp = new SRSocket("Server, Temporary Socket 'S'");
-                    DatagramPacket result = server.parse(packet);
-
-                    temp.notifyXtra(result, "Sending Packet");
-                    temp.send(result);
-                    temp.close();
+                    server.establish(packet);
                 }
             } catch (InvalidPacketException e) {
                 e.printStackTrace();
