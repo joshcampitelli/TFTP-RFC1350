@@ -1,4 +1,6 @@
-import java.net.InetAddress;
+import core.SRSocket;
+import exceptions.InvalidPacketException;
+
 import java.net.DatagramPacket;
 import java.io.IOException;
 
@@ -10,12 +12,12 @@ import java.io.IOException;
 public class Connection extends SRSocket implements Runnable {
 
     private String name;
-    private DatagramPacket client;
+    private DatagramPacket request;
     private int TID, clientTID;
 
     public Connection(DatagramPacket packet) throws IOException {
         super(String.format("Connection (Client TID: %d)", packet.getPort()));
-        this.client = packet;
+        this.request = packet;
         this.TID = getPort();
         this.clientTID = packet.getPort();
     }
@@ -43,8 +45,8 @@ public class Connection extends SRSocket implements Runnable {
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException {
         byte[] response = parse(request.getData());
-        DatagramPacket packet = new DatagramPacket(response, response.length, client.getAddress(), client.getPort());
 
+        DatagramPacket packet = new DatagramPacket(response, response.length, request.getAddress(), request.getPort());
         notify(packet, "Sending Packet");
         send(packet);
     }
@@ -52,12 +54,11 @@ public class Connection extends SRSocket implements Runnable {
     @Override
     public void run() {
         try {
-            process(client); // acknowledge the first packet to begin the send-receive cycle
-
             while (true) {
-                DatagramPacket packet = receive();
-                notify(packet, "Received Packet");
-                process(packet);
+                process(request);
+
+                request = receive();
+                notify(request, "Received Packet");
             }
         } catch (IOException | InvalidPacketException e) {
             e.printStackTrace();

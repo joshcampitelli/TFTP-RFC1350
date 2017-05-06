@@ -1,3 +1,5 @@
+package core;
+
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
