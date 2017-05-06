@@ -106,9 +106,9 @@ public class Server {
         while (true) {
             System.out.printf("Listening...\n");
 
-            DatagramPacket packet = server.getReceiveSocket().receive();
-            server.getReceiveSocket().notify(packet, "Received Packet");
-            server.establish(packet);
+            DatagramPacket packet = this.getReceiveSocket().receive();
+            this.getReceiveSocket().notify(packet, "Received Packet");
+            this.establish(packet);
         }
     }
 
