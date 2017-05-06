@@ -86,7 +86,8 @@ public class Server {
     }
 
     /**
-     * Parses the DatagramPacket received from the client and produces a response from it accordingly.
+     * Attempts to establish a connection for the received packet. If the packet has been determined to be invalid,
+     * an InvalidPacketException is thrown.
      *
      * @throws InvalidPacketException If the packet has been found to be illegal. Critical error.
      */
@@ -95,7 +96,7 @@ public class Server {
             throw new InvalidPacketException("Invalid packet parsed. Aborting...");
         }
 
-        Connection connection = new Connection(packet, Integer.toString(packet.getPort()));
+        Connection connection = new Connection(packet);
         new Thread(connection).start();
     }
 

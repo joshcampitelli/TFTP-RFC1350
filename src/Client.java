@@ -78,29 +78,29 @@ public class Client {
     public int getMode() {
         return this.connectionMode;
     }
-	
+
 	private void sendReceive(byte[] filename, byte[] mode) throws IOException {
-			byte[] request;
-            byte rw;
+        byte[] request;
+        byte rw;
 
-            for (int i = 0; i <= 10; i++) {
-                rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
-                request = this.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
+        for (int i = 0; i <= 10; i++) {
+            rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
+            request = this.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
 
-                int port = serverPort;
-                if (this.getMode() == MODE_TEST) {
-                    port = INTERMEDIATE_PORT;
-                }
-
-                DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
-                this.getSocket().notifyXtra(packet, "Sending packet");
-                this.getSocket().send(InetAddress.getLocalHost(), port, request);
-
-                System.out.printf("Waiting for response from server...\n");
-                DatagramPacket response = this.getSocket().receive();
-				serverPort = response.getPort();
-                this.getSocket().notifyXtra(response, "Packet Received");
+            int port = serverPort;
+            if (this.getMode() == MODE_TEST) {
+                port = INTERMEDIATE_PORT;
             }
+
+            DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
+            this.getSocket().notifyXtra(packet, "Sending packet");
+            this.getSocket().send(InetAddress.getLocalHost(), port, request);
+
+            System.out.printf("Waiting for response from server...\n");
+            DatagramPacket response = this.getSocket().receive();
+			serverPort = response.getPort();
+            this.getSocket().notifyXtra(response, "Packet Received");
+        }
 	}
 
     public static void main(String[] args) {
@@ -109,7 +109,7 @@ public class Client {
             client.setMode(MODE_NORMAL);
 
             byte[] filename = client.getInput("Enter file name: ").getBytes();
-            byte[] mode = client.getInput("Enter mode: ").getBytes();
+            byte[] mode = "octet".getBytes();
 			client.sendReceive(filename, mode);
 		} catch (IOException e) {
             e.printStackTrace();
