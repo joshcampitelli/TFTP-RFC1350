@@ -100,24 +100,26 @@ public class Server {
         new Thread(connection).start();
     }
 
+    public void launch() throws IOException, InvalidPacketException {
+        System.out.printf("Server has successfully launched.\n\n");
+
+        while (true) {
+            System.out.printf("Listening...\n");
+
+            DatagramPacket packet = server.getReceiveSocket().receive();
+            server.getReceiveSocket().notify(packet, "Received Packet");
+            server.establish(packet);
+        }
+    }
+
     public static void main(String[] args) {
         try {
-
             Server server = new Server();
-            System.out.printf("Server has successfully launched.\n\n");
-
-            try {
-                while (true) {
-                    System.out.printf("Listening...\n");
-
-                    DatagramPacket packet = server.getReceiveSocket().receive();
-                    server.getReceiveSocket().notify(packet, "Received Packet");
-                    server.establish(packet);
-                }
-            } catch (InvalidPacketException e) {
-                e.printStackTrace();
-            }
+            server.launch();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidPacketException e) {
+            // TODO: implement a nice way to terminate server
             e.printStackTrace();
         }
     }
