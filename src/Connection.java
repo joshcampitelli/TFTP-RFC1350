@@ -45,7 +45,7 @@ public class Connection extends SRSocket implements Runnable {
         dispatch(response);
     }
 
-    private void dispatch(byte[] data) {
+    private void dispatch(byte[] data) throws IOException {
         DatagramPacket packet = new DatagramPacket(data, data.length, client.getAddress(), client.getPort());
         notify(packet, "Sending Packet");
         send(packet);
