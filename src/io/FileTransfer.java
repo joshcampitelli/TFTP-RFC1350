@@ -33,11 +33,10 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    public FileTransfer(String filepath, int mode) throws UnknownIOModeException {
+    public FileTransfer(String filepath, int mode) throws FileNotFoundException, UnknownIOModeException {
         this.filepath = filepath;
         initialize(mode);
     }
-
 
     /**
      * Reads up to BLOCK_SIZE worth of data from the FileInputStream.
@@ -45,7 +44,7 @@ public class FileTransfer {
      *
      * @return the buffer byte array with the data read.
      */
-    public byte[] read() {
+    public byte[] read() throws IOException {
         byte[] block;
         if (this.stream instanceof FileInputStream) {
 
@@ -53,12 +52,8 @@ public class FileTransfer {
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
 
-            try {
-                if (reader.read(block) < BLOCK_SIZE) {
-                    done();
-                }
-            } catch(IOException e) {
-                e.printStackTrace();
+            if (reader.read(block) < BLOCK_SIZE) {
+                done();
             }
         }
 
@@ -70,7 +65,7 @@ public class FileTransfer {
      * Writes up to 512 bytes of data to the FileOutputStream.
      * Checks if last block was reached and takes appropriate measures if necessary.
      */
-    public void write(byte[] b) {
+    public void write(byte[] b) throws IOException {
         // TODO: abnormal request: writing more than 512 bytes at a time: should it be critical?
         if (b.length > BLOCK_SIZE) {
             return;
@@ -80,11 +75,7 @@ public class FileTransfer {
 
             // safe typecast, no need to worry about runtime errors
             FileOutputStream writer = (FileOutputStream) stream;
-            try {
-                writer.write(b);
-            } catch(IOException e) {
-                e.printStackTrace();
-            }
+            writer.write(b);
 
             if (b.length < BLOCK_SIZE) {
                 done();
@@ -107,19 +98,11 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    private void initialize(int mode) throws UnknownIOModeException { 
+    private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException { 
         if (mode == READ) {
-            try {
-                stream = new FileInputStream(this.filepath);
-            } catch(FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            stream = new FileInputStream(this.filepath);
         } else if (mode == WRITE) {
-            try {
-                stream = new FileOutputStream(this.filepath);
-            } catch(FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            stream = new FileOutputStream(this.filepath);
         } else {
             throw new UnknownIOModeException("I/O Mode provided is not recognized!");
         }
@@ -128,13 +111,13 @@ public class FileTransfer {
     /**
      * Internally called when the last data block has been detected. All operations shall cease.
      */
-    private void done() {
+    private void done(){
         try {
             stream.close();
+            stream = null;
         } catch(Exception e) {
             e.printStackTrace();
         }
-        stream = null;
     }
 
 }
