@@ -1,7 +1,13 @@
+package io;
+
 import java.lang.AutoCloseable;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import exceptions.UnknownIOModeException;
 
 /**
  * FileTransfer acts as a medium to write/read bytes of data while abstracting the I/O jargon.
@@ -40,15 +46,19 @@ public class FileTransfer {
      * @return the buffer byte array with the data read.
      */
     public byte[] read() {
-        byte block;
+        byte[] block;
         if (this.stream instanceof FileInputStream) {
 
             // safe typecast, no need to worry about runtime errors
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
 
-            if (reader.read(block) < BLOCK_SIZE) {
-                done();
+            try {
+                if (reader.read(block) < BLOCK_SIZE) {
+                    done();
+                }
+            } catch(IOException e) {
+                e.printStackTrace();
             }
         }
 
@@ -70,7 +80,11 @@ public class FileTransfer {
 
             // safe typecast, no need to worry about runtime errors
             FileOutputStream writer = (FileOutputStream) stream;
-            writer.write(b);
+            try {
+                writer.write(b);
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
 
             if (b.length < BLOCK_SIZE) {
                 done();
@@ -93,11 +107,19 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    private void initialize(int mode) throws UnknownIOModeException {
+    private void initialize(int mode) throws UnknownIOModeException { 
         if (mode == READ) {
-            stream = new FileInputStream(this.filepath);
+            try {
+                stream = new FileInputStream(this.filepath);
+            } catch(FileNotFoundException e) {
+                e.printStackTrace();
+            }
         } else if (mode == WRITE) {
-            stream = new FileOutputStream(this.filepath);
+            try {
+                stream = new FileOutputStream(this.filepath);
+            } catch(FileNotFoundException e) {
+                e.printStackTrace();
+            }
         } else {
             throw new UnknownIOModeException("I/O Mode provided is not recognized!");
         }
@@ -107,7 +129,11 @@ public class FileTransfer {
      * Internally called when the last data block has been detected. All operations shall cease.
      */
     private void done() {
-        stream.close();
+        try {
+            stream.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
         stream = null;
     }
 
