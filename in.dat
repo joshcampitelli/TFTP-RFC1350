@@ -1,8 +1,0 @@
-Test for this class:
-
-* @author Carleton University Summer 2017 SYSC3303A Group 2
-* @since May the 5th, 2017
- * FileTransfer.java - Demonstrates how to use Java's byte stream I/O
- * classes to copy a file. Copies the contents of in.dat to out.dat.
- *
- */
