@@ -65,7 +65,7 @@ public class FileTransfer {
      * Writes up to 512 bytes of data to the FileOutputStream.
      * Checks if last block was reached and takes appropriate measures if necessary.
      */
-    public void write(byte[] b) {
+    public void write(byte[] b) throws IOException {
         // TODO: abnormal request: writing more than 512 bytes at a time: should it be critical?
         if (b.length > BLOCK_SIZE) {
             return;
@@ -75,11 +75,7 @@ public class FileTransfer {
 
             // safe typecast, no need to worry about runtime errors
             FileOutputStream writer = (FileOutputStream) stream;
-            try {
-                writer.write(b);
-            } catch(IOException e) {
-                e.printStackTrace();
-            }
+            writer.write(b);
 
             if (b.length < BLOCK_SIZE) {
                 done();
@@ -115,13 +111,13 @@ public class FileTransfer {
     /**
      * Internally called when the last data block has been detected. All operations shall cease.
      */
-    private void done() {
+    private void done(){
         try {
             stream.close();
+            stream = null;
         } catch(Exception e) {
             e.printStackTrace();
         }
-        stream = null;
     }
 
 }
