@@ -18,23 +18,19 @@ public class FileTransfer {
     private String filepath;
     private AutoCloseable stream;
 
-    public FileTransfer(String filepath, int mode) throws UnknownIOModeException {
+    public FileTransfer(String filepath, int mode) throws FileNotFoundException, UnknownIOModeException {
         this.filepath = filepath;
         initialize(mode);
     }
 
-    public byte[] read() {
+    public byte[] read() throws IOException {
         byte[] block;
         if (this.stream instanceof FileInputStream) {
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
 
-            try {
-                if (reader.read(block) < BLOCK_SIZE) {
-                    done();
-                }
-            } catch(IOException e) {
-                e.printStackTrace();
+            if (reader.read(block) < BLOCK_SIZE) {
+                done();
             }
         }
 
@@ -60,19 +56,11 @@ public class FileTransfer {
         return stream == null;
     }
 
-    private void initialize(int mode) throws UnknownIOModeException { 
+    private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException { 
         if (mode == READ) {
-            try {
-                stream = new FileInputStream(this.filepath);
-            } catch(FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            stream = new FileInputStream(this.filepath);
         } else if (mode == WRITE) {
-            try {
-                stream = new FileOutputStream(this.filepath);
-            } catch(FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            stream = new FileOutputStream(this.filepath);
         } else {
             throw new UnknownIOModeException("I/O Mode provided is not recognized!");
         }
