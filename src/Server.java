@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.lang.Thread;
 
 import core.SRSocket;
+import core.Connection;
 import exceptions.InvalidPacketException;
 
 /**

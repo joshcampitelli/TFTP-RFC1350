@@ -1,4 +1,5 @@
-import core.SRSocket;
+package core;
+
 import exceptions.InvalidPacketException;
 
 import java.net.DatagramPacket;
