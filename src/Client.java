@@ -76,7 +76,7 @@ public class Client extends SRSocket {
             System.out.printf("Waiting for response from server...\n");
 
             DatagramPacket response = receive();
-			      serverPort = response.getPort();
+			serverPort = response.getPort();
             inform(response, "Packet Received", true);
         }
 	}

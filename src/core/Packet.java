@@ -18,26 +18,6 @@ public class Packet {
         this.packet = packet;
     }
 
-    public DatagramPacket returnPacket(byte[] blocknumber) {
-        return returnPacket(blocknumber, packet.getData());
-    }
-
-    public DatagramPacket returnPacket(byte[] blocknumber, byte[] data) {
-        return returnPacket(blocknumber, data, packet.getAddress(), packet.getPort());
-    }
-
-    /**
-     * @param byte[] blocknumber matching DATA and ACK blocknumber
-     */
-    public DatagramPacket returnPacket(byte[] blocknumber, byte[] data, InetAddress address, int port) {
-        PacketTypes type = checkPacketType(this.packet);
-        if (type == PacketTypes.RRQ)        return DATAPacket(new byte[]{0, 1}, data, address, port);
-        else if (type == PacketTypes.WRQ)   return ACKPacket(new byte[]{0, 0}, address, port);
-        else if (type == PacketTypes.ACK)   return DATAPacket(blocknumber, data, address, port);
-        else if (type == PacketTypes.DATA)  return ACKPacket(blocknumber, address, port);
-        else return null;
-    }
-
     /**
      *
      * @return true     if the val is present
@@ -114,9 +94,11 @@ public class Packet {
     }
 
     /**
-     * @param byte   rw       the read/write byte
-     * @param byte[] mode     the mode byte array
-     * @param byte[] filename the filename byte array
+     * @param byte   the read/write byte
+     * @param byte[] the mode byte array
+     * @param byte[] the filename of the file being transferred 
+     *
+     * @return newly constructed read or write byte array
      *
      * Builds the master byte array composed from the mode, filename and read/write bytes.
      */
@@ -137,15 +119,31 @@ public class Packet {
         return request;
     }
 
+    /**
+     * @param byte[] the mode byte array
+     * @param byte[] the filename of the file being transferred
+     *
+     * @return a read byte array
+     */
     public byte[] RRQ(byte[] mode, byte[] filename) {
         // Safe typecast
         return createRequest((byte) 1, mode, filename);
     }
 
+    /**
+     *
+     * @return a write byte array
+     */
     public byte[] WRQ(byte[] mode, byte[] filename) {
         return createRequest((byte) 2, mode, filename);
     }
 
+    /**
+     * @param byte[] the matching blocknumber for the acknowledgement and data packets
+     * @param byte[] the data being sent
+     *
+     * @return a data byte array
+     */
     public byte[] DATA(byte[] blocknumber, byte[] data) {
         byte[] request = new byte[2 + blocknumber.length + data.length];
         int counter = 2;
@@ -159,6 +157,11 @@ public class Packet {
         return request;
     }
 
+    /**
+     * @param byte[] the matching blocknumber for the acknowledgement and data packets
+     *
+     * @return an acknowledgement byte array
+     */
     public byte[] ACK(byte[] blocknumber) {
         byte[] ack = new byte[2 + blocknumber.length];
         ack[1] = 4;
@@ -167,6 +170,9 @@ public class Packet {
     }
 
     /**
+     * @param byte[] data for the datagram packet
+     * 
+     * @return datagram packet
      *
      * Creates a DatagramPacket from received DatagramPacket.
      */
@@ -182,6 +188,12 @@ public class Packet {
         return new DatagramPacket(data, data.length, address, port);
     }
 
+    /**
+     * @param byte[] mode byte array
+     * @param byte[] filename of the file being transferred
+     *
+     * @return read datagram packet 
+     */
     public DatagramPacket RRQPacket(byte[] mode, byte[] filename) {
         return createPacket(RRQ(mode, filename));
     }
@@ -190,6 +202,10 @@ public class Packet {
         return createPacket(RRQ(mode, filename), address, port);
     }
 
+    /**
+     *
+     * @return write datagram packet
+     */
     public DatagramPacket WRQPacket(byte[] mode, byte[] filename) {
         return createPacket(WRQ(mode, filename));
     }
@@ -198,6 +214,10 @@ public class Packet {
         return createPacket(WRQ(mode, filename), address, port);
     }
 
+    /**
+     *
+     * @return data datagram packet
+     */
     public DatagramPacket DATAPacket(byte[] blocknumber, byte[] data) {
         return createPacket(DATA(blocknumber, data));
     }
@@ -206,6 +226,10 @@ public class Packet {
         return createPacket(DATA(blocknumber, data), address, port);
     }
 
+    /**
+     *
+     * @return ack datagram packet
+     */
     public DatagramPacket ACKPacket(byte[] blocknumber) {
         return createPacket(ACK(blocknumber));
     }
