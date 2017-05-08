@@ -66,11 +66,11 @@ public class Client extends SRSocket {
             DatagramPacket packet;
 
             if (i % 2 == 0)
-                packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port); 
+                packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             else
                 packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
 
-            notifyXtra(packet, "Sending packet");
+            inform(packet, "Sending packet", true);
             send(packet);
 
             System.out.printf("Waiting for response from server...\n");
