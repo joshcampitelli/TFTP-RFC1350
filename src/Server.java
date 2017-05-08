@@ -1,6 +1,7 @@
 import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
+import java.util.ArrayList;
 
 import core.SRSocket;
 import core.Connection;
@@ -14,10 +15,14 @@ import exceptions.InvalidPacketException;
 
 public class Server extends SRSocket {
 
+    private QuitListener quitListener;
+    private ArrayList<Thread> connections;
+    private int threadNumber;
     public static int RECEIVE_PORT = 69;
 
     public Server() throws IOException {
         super("Server, Socket 'R'", RECEIVE_PORT);
+        this.connections = new ArrayList<>();
     }
 
 
@@ -44,30 +49,41 @@ public class Server extends SRSocket {
         }
 
         Connection connection = new Connection(packet);
-        new Thread(connection).start();
+        Thread thread = new Thread(connection, "Connection" + threadNumber++);
+        thread.start();
+
+        connections.add(thread);
     }
 
     public void launch() throws IOException, InvalidPacketException {
         System.out.printf("Server has successfully launched.\n\n");
+        QuitListener listener = new QuitListener(this, "QuitListener");
+        listener.start();
 
-        while (true) {
+        while (!isClosed()) {
             System.out.printf("Listening...\n");
 
             DatagramPacket packet = receive();
-            notify(packet, "Received Packet");
+            inform(packet, "Received Packet");
             establish(packet);
         }
     }
 
+    public void shutdown() {
+        close();
+    }
+
+
+
     public static void main(String[] args) {
+        Server server = null;
         try {
-            Server server = new Server();
+            server = new Server();
             server.launch();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InvalidPacketException e) {
-            // TODO: implement a nice way to terminate server
-            e.printStackTrace();
+            System.out.printf("Invalid packet encountered. Server shutting down: no more connections accepted.\n");
         }
     }
 }
