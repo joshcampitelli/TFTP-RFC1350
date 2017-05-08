@@ -23,6 +23,7 @@ public class FileTransfer {
 
     private File file;
     private AutoCloseable stream;
+    private int lastBlockSize;
 
     /**
      * Constructs and preapres the class for all operations.
@@ -41,19 +42,20 @@ public class FileTransfer {
      * @return the buffer byte array with the data read.
      */
     public byte[] read() throws IOException {
-        byte[] block;
+        byte[] block = null;
         if (this.stream instanceof FileInputStream) {
 
             // safe typecast, no need to worry about runtime errors
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
+            lastBlockSize = reader.read(block);
 
-            if (reader.read(block) < BLOCK_SIZE) {
+            if (lastBlockSize < BLOCK_SIZE) {
                 done();
             }
         }
 
-        return null;
+        return block;
     }
 
 
@@ -88,16 +90,21 @@ public class FileTransfer {
         return stream == null;
     }
 
+    public int lastBlockSize() {
+        return lastBlockSize;
+    }
+
     /**
      * Initializes the class by constructing the instance variable ("stream") with the correct subclass.
      * The subclasses are FileInputStream and FileOutputStream. Both of these subclasses implement AutoCloseable.
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException { 
+    private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException {
         if (mode == READ) {
             System.out.println("ld: " + this.file.getAbsolutePath());
             stream = new FileInputStream(this.file.getAbsolutePath());
+            //stream = new FileInputStream("C:\\Users\\Ahmed\\Dropbox\\Carleton\\Third Year\\Summer 2017\\SYSC3303\\Project\\test.txt");
         } else if (mode == WRITE) {
             stream = new FileOutputStream(this.file.getAbsolutePath());
         } else {

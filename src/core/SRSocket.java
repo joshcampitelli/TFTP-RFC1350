@@ -37,11 +37,12 @@ public class SRSocket extends DatagramSocket {
     }
 
     public DatagramPacket receive() throws IOException {
-        byte[] data = new byte[100];
+        byte[] data = new byte[514];
         DatagramPacket packet = new DatagramPacket(data, data.length);
         this.receive(packet);
 
         // reduce the buffer to the size of the data received, if possible
+        System.out.println(packet.getLength());
         data = shrink(packet.getData(), packet.getLength());
         packet.setData(data);
 
@@ -78,7 +79,7 @@ public class SRSocket extends DatagramSocket {
      *
      * @return the shrunk array
      */
-    private byte[] shrink(byte[] arr, int newLength) {
+    protected byte[] shrink(byte[] arr, int newLength) {
         if (newLength > arr.length) {
             return arr;
         }

@@ -39,8 +39,8 @@ public class Connection extends SRSocket implements Runnable {
     private byte[] getBlockNumber(int input) {
         byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
 
-        data[0] = (byte)(input & 0xFF);
-        data[1] = (byte)((input >> 8) & 0xFF);
+        data[1] = (byte)(input & 0xFF);
+        data[0] = (byte)((input >> 8) & 0xFF);
 
         return data;
     }
@@ -49,6 +49,7 @@ public class Connection extends SRSocket implements Runnable {
     //The method extracts the filename from the data portion of the packet
     private String extractFilename(DatagramPacket packet) {
         byte[] file = new byte[100];
+        int len = 0;
 
         //Loop through the data, starting at index position 2 (surpassing the opcode)
         for(int i = 2; i < packet.getData().length; i++) {
@@ -57,8 +58,11 @@ public class Connection extends SRSocket implements Runnable {
                 break;
             } else {
                 file[i - 2] = packet.getData()[i];
+                len++;
             }
         }
+
+        file = shrink(file, len);
         System.out.println("=============" + new String(file) + "==============");
         return new String(file);
     }
@@ -98,8 +102,9 @@ public class Connection extends SRSocket implements Runnable {
         String filename = extractFilename(packet);
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
+        data = shrink(data, fileTransfer.lastBlockSize());
 
-        DatagramPacket temp = new Packet().DATAPacket(data, getBlockNumber(dataBlock));
+        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
         dataBlock++;
 
         return temp;
