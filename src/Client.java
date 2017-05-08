@@ -82,7 +82,7 @@ public class Client extends SRSocket {
 
         for (int i = 0; i <= 10; i++) {
             rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
-            request = this.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
+            request = this.buildRequest(i == 10 ? rw : rw, mode, filename);
 
             int port = serverPort;
             if (this.getMode() == MODE_TEST) {
@@ -90,14 +90,14 @@ public class Client extends SRSocket {
             }
 
             DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
-            notifyXtra(packet, "Sending packet");
+            inform(packet, "Sending packet", true);
             send(packet);
 
             System.out.printf("Waiting for response from server...\n");
 
             DatagramPacket response = receive();
 			serverPort = response.getPort();
-            notifyXtra(response, "Packet Received");
+            inform(response, "Packet Received", true);
         }
 	}
 

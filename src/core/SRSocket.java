@@ -32,6 +32,10 @@ public class SRSocket extends DatagramSocket {
         this.name = name;
     }
 
+    protected String getName() {
+        return this.name;
+    }
+
     public DatagramPacket receive() throws IOException {
         byte[] data = new byte[100];
         DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -51,17 +55,20 @@ public class SRSocket extends DatagramSocket {
         this.send(new DatagramPacket(data, data.length, host, port));
     }
 
-    public void notify(DatagramPacket packet, String event) {
+    public void inform(DatagramPacket packet, String event, boolean verbose) {
         int len = packet.getLength();
         System.out.printf("%s: %s:\n", this.name, event);
         System.out.printf("%s Host Address: %s, Host port: %d, Length: %d\n",
                         event.contains("Send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
         System.out.printf("Data (as string): %s\n", new String(packet.getData(), 0, packet.getData().length));
+
+        if (verbose) {
+            System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
+        }
     }
 
-    public void notifyXtra(DatagramPacket packet, String event) {
-        this.notify(packet, event);
-        System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
+    public void inform(DatagramPacket packet, String event) {
+        inform(packet, event, false);
     }
 
     protected boolean matches(byte[] data, int size, String form, byte[] control) {

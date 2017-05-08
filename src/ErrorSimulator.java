@@ -49,21 +49,21 @@ public class ErrorSimulator {
         while (true) {
             System.out.printf("Listening...\n");
             DatagramPacket client = this.getReceiveSocket().receive();
-            this.getReceiveSocket().notify(client, "Received Packet");
+            this.getReceiveSocket().inform(client, "Received Packet");
 
             // request received => produce a temporary send/receive socket to fulfill the networking requirements
             SRSocket temp = new SRSocket("IntermediateHost, Temp Socket 'S/R'");
 
             DatagramPacket server = this.produceFrom(client, getDestinationTID(client), InetAddress.getLocalHost());
-            temp.notify(server, "Sending Packet");
+            temp.inform(server, "Sending Packet");
             temp.send(server);
 
             DatagramPacket response = temp.receive();
-            temp.notify(response, "Received Packet");
+            temp.inform(response, "Received Packet");
             register(client.getPort(), response.getPort());
 
             DatagramPacket result = this.produceFrom(response, client.getPort(), client.getAddress());
-            temp.notify(result, "Sending Packet");
+            temp.inform(result, "Sending Packet");
             temp.send(result);
             temp.close();
         }
