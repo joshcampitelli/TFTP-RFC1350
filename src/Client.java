@@ -88,10 +88,7 @@ public class Client extends SRSocket {
         serverPort = response.getPort();
         inform(response, "Packet Received", true);
 
-        if (response.getData().length < 514) {
-            System.out.println("======READ COMPLETE=======");
-            System.out.println("Closing the Clients Stream");
-        } else {
+        if (response.getData().length == 514) {
             DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
             inform(ackPacket, "Sending ACK Packet", true);
             send(ackPacket);
@@ -115,10 +112,7 @@ public class Client extends SRSocket {
             send(dataPacket);
             dataBlock++;
 
-            if (dataPacket.getData().length < 514) {
-                System.out.println("======WRITE COMPLETE=======");
-                System.out.println("Closing the Clients Stream");
-            } else {
+            if (dataPacket.getData().length == 514) {
                 wrq();
             }
         }
