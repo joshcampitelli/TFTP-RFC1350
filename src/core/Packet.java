@@ -18,22 +18,24 @@ public class Packet {
         this.packet = packet;
     } 
 
-    public DatagramPacket parse(byte[] blocknumber) {
-        return parse(blocknumber, packet.getData());
+    public DatagramPacket returnPacket(byte[] blocknumber) {
+        return returnPacket(blocknumber, packet.getData());
     }
 
-    public DatagramPacket parse(byte[] blocknumber, byte[] data) {
-        if (data[1] == 1) {
-            return DATAPacket(blocknumber, data);
-        } else if (data[1] == 2) {
-            return ACKPacket(blocknumber);
-        } else if (data[1] == 3) {
-            return ACKPacket(blocknumber);
-        } else if (data[1] == 4) {
-            return DATAPacket(blocknumber, data);
-        } else {
-            return null;
-        }
+    public DatagramPacket returnPacket(byte[] blocknumber, byte[] data) {
+        return returnPacket(blocknumber, data, packet.getAddress(), packet.getPort());
+    }
+
+    /**
+     * @param byte[] blocknumber matching DATA and ACK blocknumber 
+     */
+    public DatagramPacket returnPacket(byte[] blocknumber, byte[] data, InetAddress address, int port) {
+        PacketTypes type = checkPacketType(this.packet);
+        if (type == PacketTypes.RRQ)        return DATAPacket(new byte[]{1}, data, address, port);
+        else if (type == PacketTypes.WRQ)   return ACKPacket(new byte[]{0}, address, port);
+        else if (type == PacketTypes.ACK)   return DATAPacket(blocknumber, data, address, port); 
+        else if (type == PacketTypes.DATA)  return ACKPacket(blocknumber, address, port); 
+        else return null;
     }
 
     /**
@@ -84,8 +86,11 @@ public class Packet {
         }
     }
 
-    //PacketTypes method uses the matches method to determine the type of packet sent to the server
-    //then returns the type as an enum temporarily, could have a class with setPacketType() etc.
+    /**
+     * 
+     * PacketTypes method uses the matches method to determine the type of packet sent to the server
+     * then returns the type as an enum temporarily, could have a class with setPacketType() etc.
+     */
     private PacketTypes checkPacketType(DatagramPacket packet) {
         byte[] readValues = {1};
         byte[] writeValues = {2};
@@ -144,7 +149,7 @@ public class Packet {
         counter += blocknumber.length;
 
         System.arraycopy(data, 0, aarthi, counter, data.length);
-        return  aarthi;
+        return aarthi;
     }
 
     public byte[] ACK(byte[] blocknumber) {
@@ -200,8 +205,5 @@ public class Packet {
 
     public DatagramPacket ACKPacket(byte[] blocknumber, InetAddress address, int port) {
         return createPacket(ACK(blocknumber), address, port);
-    }
-
-    public void run() {
     }
 }
