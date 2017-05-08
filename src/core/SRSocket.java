@@ -71,54 +71,6 @@ public class SRSocket extends DatagramSocket {
         inform(packet, event, false);
     }
 
-    protected boolean matches(byte[] data, int size, String form, byte[] control) {
-        return matches(data, 0, size, form, control, false);
-    }
-
-    /**
-     * Recursively Matches a byte array pattern with the provided form as a string, where the following letters in the string are
-     * important:
-     *
-     *   - c: stands for control, and checks for the given byte with the control byte array provided
-     *   - x: stands for dont care, used for skipping a dynamic input that terminates once the next pattern in line
-     *   is found.
-     *
-     */
-    protected boolean matches(byte[] data, int index, int size, String form, byte[] control, boolean inText) {
-        // base case
-        if (form.isEmpty() && index == size) {
-            return true;
-        }
-
-        char letter = form.charAt(0);
-        if (letter == 'c' && contains(control, data[index])) {
-            return matches(data, ++index, size, form.substring(1), control, false);
-        } else if (letter == '0' && data[index] == 0) {
-            return matches(data, ++index, size, form.substring(1), control, false);
-        } else if (letter == 'x' && data[index] != 0) {
-            return matches(data, ++index, size, form.substring(1), control, true);
-        } else if (inText){
-            return matches(data, ++index, size, form, control, true);
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Simple helper method use to check if a value is present in the array.
-     *
-     * @return  true    if the val is present
-     *          false   otherwise
-     */
-    private boolean contains(byte[] arr, byte val) {
-        for (byte b : arr) {
-            if (b == val) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     /**
      * Shrinks the provided array to a new, specified length. If the new length provided is bigger
