@@ -5,8 +5,8 @@ public class QuitListener extends Thread {
     private Scanner scanner;
     private Server server;
 
-    public QuitListener(Server server, String title) {
-        super(title);
+    public QuitListener(Server server) {
+        super("QuitListener");
         this.server = server;
         scanner = new Scanner(System.in);
     }
@@ -15,7 +15,6 @@ public class QuitListener extends Thread {
     public void run() {
         String input;
         while (true) {
-            System.out.printf("Do you want to shutdown? (quit): ");
             input = scanner.nextLine();
 
             if (input.equals("quit")) {
