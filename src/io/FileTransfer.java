@@ -1,11 +1,7 @@
 package io;
 
+import java.io.*;
 import java.lang.AutoCloseable;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import exceptions.UnknownIOModeException;
 
@@ -25,7 +21,7 @@ public class FileTransfer {
     public static int WRITE = 2;
     public static int BLOCK_SIZE = 512; // 512 bytes
 
-    private String filepath;
+    private File file;
     private AutoCloseable stream;
 
     /**
@@ -34,7 +30,7 @@ public class FileTransfer {
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
     public FileTransfer(String filepath, int mode) throws FileNotFoundException, UnknownIOModeException {
-        this.filepath = filepath;
+        this.file = new File(filepath);
         initialize(mode);
     }
 
@@ -100,9 +96,10 @@ public class FileTransfer {
      */
     private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException { 
         if (mode == READ) {
-            stream = new FileInputStream(this.filepath);
+            System.out.println("ld: " + this.file.getAbsolutePath());
+            stream = new FileInputStream(this.file.getAbsolutePath());
         } else if (mode == WRITE) {
-            stream = new FileOutputStream(this.filepath);
+            stream = new FileOutputStream(this.file.getAbsolutePath());
         } else {
             throw new UnknownIOModeException("I/O Mode provided is not recognized!");
         }

@@ -4,7 +4,6 @@ import exceptions.InvalidPacketException;
 import exceptions.UnknownIOModeException;
 import io.FileTransfer;
 
-import java.io.FileNotFoundException;
 import java.net.DatagramPacket;
 import java.io.IOException;
 
@@ -17,7 +16,6 @@ public class Connection extends SRSocket implements Runnable {
 
     private DatagramPacket request;
     private int TID, clientTID;
-    private enum PacketTypes { ACK, DATA, RRQ, WRQ}
     private FileTransfer fileTransfer;
     private int ackBlock = 0;
     private int dataBlock = 1;
@@ -50,7 +48,7 @@ public class Connection extends SRSocket implements Runnable {
     //extractFilename method only gets called once a RRQ or WRQ Packet has arrived on the server
     //The method extracts the filename from the data portion of the packet
     private String extractFilename(DatagramPacket packet) {
-        String file = "";
+        byte[] file = new byte[100];
 
         //Loop through the data, starting at index position 2 (surpassing the opcode)
         for(int i = 2; i < packet.getData().length; i++) {
@@ -58,10 +56,11 @@ public class Connection extends SRSocket implements Runnable {
             if(packet.getData()[i] == 0) {
                 break;
             } else {
-                file += packet.getData()[i];
+                file[i - 2] = packet.getData()[i];
             }
         }
-        return file;
+        System.out.println("=============" + new String(file) + "==============");
+        return new String(file);
     }
 
     //Removes the opcode & block number (first 4 bytes) from the data
@@ -72,73 +71,69 @@ public class Connection extends SRSocket implements Runnable {
         return data;
     }
 
-    //Handles the different types of packets sent to the server
+    //Handles the different types of packets sent to the server, returns the returnPacket to go back to client (ACK/DATA)
     // TODO: damn is did'nt know this was a keyword, this method is very messy...
-    private void handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
+    private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
 
         Packet packet = new Packet(receivedPacket);
 
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
-            rrqReceived(receivedPacket);
+            return rrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.WRQ) {
-            wrqReceived(receivedPacket);
+            return wrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ACK) {
-            ackReceived(receivedPacket);
+            return ackReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
-            dataReceived(receivedPacket);
+            return dataReceived(receivedPacket);
         } else {
             //Throw an error
+            System.out.println("Illegal data buffer!!!");
             throw new InvalidPacketException("Illegal data buffer!!!");
+
         }
     }
 
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
-    private void rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+    private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(filename, 1);
+        fileTransfer = new FileTransfer(filename, FileTransfer.READ);
+        byte[] data = fileTransfer.read();
+
+        DatagramPacket temp = new Packet().DATAPacket(data, getBlockNumber(dataBlock));
+        dataBlock++;
+
+        return temp;
     }
 
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
-    private void wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+    private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(filename, 2);
+        fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
+        DatagramPacket temp =  new Packet().ACKPacket(getBlockNumber(ackBlock));
+        return temp;
     }
 
     //Ack Received gets the bytes from the FileTransfer Object then sends DATA1 Packet
-    private void ackReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+    private DatagramPacket ackReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         //Send Data from the file
         byte[] data = fileTransfer.read();
-        //Create DATA Packet using read data, then send
+
+        DatagramPacket temp = new Packet().DATAPacket(data, getBlockNumber(dataBlock));
+        dataBlock++;
+        return temp;
     }
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
-    private void dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+    private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
-        //send an ACK Packet
-        byte[] ackBlock = {0, 4, 0, 0};
-        //Zero is a placeholder, block number increments each time an ACK packet gets sent
-        //DatagramPacket ackPacket = new DatagramPacket(ackData); //Pass it the data
-        //send(ackPacket); //Need to change send and receive to use Packet instead of DatagramPacket
+        DatagramPacket temp = new Packet().ACKPacket(getBlockNumber(ackBlock));
+        ackBlock++;
+        return temp;
     }
 
-    /**
-     * Produce a response from the given byte array.
-     */
-    public byte[] parse(byte[] data) throws InvalidPacketException {
-        if (data[1] == 1) {
-            return new byte[]{0, 3, 0, 1};
-        } else if (data[1] == 2) {
-            return new byte[]{0, 4, 0, 0};
-        } else {
-            throw new InvalidPacketException("Illegal data buffer!!!");
-        }
-    }
-
-    private void process(DatagramPacket request) throws IOException, InvalidPacketException {
-        byte[] response = parse(request.getData());
-
-        DatagramPacket packet = new DatagramPacket(response, response.length, request.getAddress(), request.getPort());
+    private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
+        DatagramPacket packet = handlePacket(request);
         inform(packet, "Sending Packet");
         send(packet);
     }
@@ -152,7 +147,9 @@ public class Connection extends SRSocket implements Runnable {
                 request = receive();
                 inform(request, "Received Packet");
             }
-        } catch (IOException | InvalidPacketException e) {
+        } catch (IOException | InvalidPacketException | UnknownIOModeException e) {
+            System.out.println("=================================");
+            e.printStackTrace();
             System.out.printf("%s sent an invalid request. Terminating thread...\n", getName());
         }
     }
