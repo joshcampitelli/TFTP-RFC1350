@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import core.SRSocket;
 import core.Connection;
 import exceptions.InvalidPacketException;
+import java.net.SocketException;
 
 /**
  *
@@ -43,9 +44,10 @@ public class Server extends SRSocket {
      * @throws InvalidPacketException
      */
     public void launch() throws IOException, InvalidPacketException {
-        System.out.printf("Server has successfully launched.\n\n");
-        QuitListener listener = new QuitListener(this, "QuitListener");
-        listener.start();
+        System.out.printf("Server has successfully launched.\n");
+
+        new QuitListener(this).start();
+        System.out.printf("If you would like to shutdown the server, type \"quit\".\n\n");
 
         while (!isClosed()) {
             System.out.printf("Listening...\n");
@@ -69,11 +71,13 @@ public class Server extends SRSocket {
         try {
             server = new Server();
             server.launch();
+        } catch (SocketException e) {
+            System.out.printf("Shutdown successful: no more incoming connections to be serviced...\n");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InvalidPacketException e) {
             server.shutdown();
-            System.out.printf("Invalid packet encountered. Server shutting down: no more connections accepted.\n");
+            System.out.printf("Invalid packet encountered. Server is attempting to shutdown...\n");
         }
     }
 }

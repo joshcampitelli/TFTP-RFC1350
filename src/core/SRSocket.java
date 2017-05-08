@@ -56,14 +56,18 @@ public class SRSocket extends DatagramSocket {
         this.send(new DatagramPacket(data, data.length, host, port));
     }
 
-    public void inform(DatagramPacket packet, String event, boolean verbose) {
+    public void inform(DatagramPacket packet, String event, boolean extra, boolean mode) {
+        if (mode == Client.NORMAL) {
+            return;
+        }
+
         int len = packet.getLength();
         System.out.printf("%s: %s:\n", this.name, event);
         System.out.printf("%s Host Address: %s, Host port: %d, Length: %d\n",
                         event.contains("Send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
         System.out.printf("Data (as string): %s\n", new String(packet.getData(), 0, packet.getData().length));
 
-        if (verbose) {
+        if (extra) {
             System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
         }
     }
