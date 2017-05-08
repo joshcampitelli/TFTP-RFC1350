@@ -57,6 +57,7 @@ public class Client extends SRSocket {
         byte rw;
 
         for (int i = 0; i <= 10; i++) {
+
             int port = serverPort;
             if (this.getMode() == MODE_TEST) {
                 port = ERRORSIMULATOR_PORT;
@@ -75,8 +76,8 @@ public class Client extends SRSocket {
             System.out.printf("Waiting for response from server...\n");
 
             DatagramPacket response = receive();
-			serverPort = response.getPort();
-            notifyXtra(response, "Packet Received");
+			      serverPort = response.getPort();
+            inform(response, "Packet Received", true);
         }
 	}
 

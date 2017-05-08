@@ -12,7 +12,6 @@ import java.io.IOException;
  */
 public class Connection extends SRSocket implements Runnable {
 
-    private String name;
     private DatagramPacket request;
     private int TID, clientTID;
 
@@ -48,7 +47,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] response = parse(request.getData());
 
         DatagramPacket packet = new DatagramPacket(response, response.length, request.getAddress(), request.getPort());
-        notify(packet, "Sending Packet");
+        inform(packet, "Sending Packet");
         send(packet);
     }
 
@@ -59,10 +58,10 @@ public class Connection extends SRSocket implements Runnable {
                 process(request);
 
                 request = receive();
-                notify(request, "Received Packet");
+                inform(request, "Received Packet");
             }
         } catch (IOException | InvalidPacketException e) {
-            e.printStackTrace();
+            System.out.printf("%s sent an invalid request. Terminating thread...\n", getName());
         }
     }
 }
