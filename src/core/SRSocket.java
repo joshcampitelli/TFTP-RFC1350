@@ -95,4 +95,14 @@ public class SRSocket extends DatagramSocket {
 
         return arr1;
     }
+
+    //converts an integer into a 2 byte array
+    protected byte[] getBlockNumber(int input) {
+        byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
+
+        data[1] = (byte)(input & 0xFF);
+        data[0] = (byte)((input >> 8) & 0xFF);
+
+        return data;
+    }
 }
