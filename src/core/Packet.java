@@ -9,7 +9,7 @@ import java.net.InetAddress;
  */
 public class Packet {
     private DatagramPacket packet;
-    private enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
+    public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
 
     public Packet() {
     }
@@ -91,7 +91,7 @@ public class Packet {
      * PacketTypes method uses the matches method to determine the type of packet sent to the server
      * then returns the type as an enum temporarily, could have a class with setPacketType() etc.
      */
-    private PacketTypes checkPacketType(DatagramPacket packet) {
+    public PacketTypes checkPacketType(DatagramPacket packet) {
         byte[] readValues = {1};
         byte[] writeValues = {2};
         byte[] dataValues = {3};
