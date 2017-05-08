@@ -12,18 +12,14 @@ import exceptions.InvalidPacketException;
  * @since May the 1st, 2017
  */
 
-public class Server {
+public class Server extends SRSocket {
 
-    private SRSocket receiveSocket;
     public static int RECEIVE_PORT = 69;
 
     public Server() throws IOException {
-        this.receiveSocket = new SRSocket("Server, Socket 'R'", RECEIVE_PORT);
+        super("Server, Socket 'R'", RECEIVE_PORT);
     }
 
-    public SRSocket getReceiveSocket() {
-        return this.receiveSocket;
-    }
 
     /**
      * Tests the packet's data buffer if it contains a valid client request.
@@ -34,56 +30,6 @@ public class Server {
     public boolean validatePacket(DatagramPacket packet) {
         byte[] readWriteValues = {1, 2};
         return matches(packet.getData(), packet.getLength(), "0cx0x0", readWriteValues);
-    }
-
-    private boolean matches(byte[] data, int size, String form, byte[] control) {
-        return matches(data, 0, size, form, control, false);
-    }
-
-    /**
-     * Recursively Matches a byte array pattern with the provided form as a string, where the following letters in the string are
-     * important:
-     *
-     *   - c: stands for control, and checks for the given byte with the control byte array provided
-     *   - x: stands for dont care, used for skipping a dynamic input that terminates once the next pattern in line
-     *   is found.
-     *
-     */
-    private boolean matches(byte[] data, int index, int size, String form, byte[] control, boolean inText) {
-        // base case
-        if (form.isEmpty() && index == size) {
-            return true;
-        }
-
-        char letter = form.charAt(0);
-        if (letter == 'c' && contains(control, data[index])) {
-            return matches(data, ++index, size, form.substring(1), control, false);
-        } else if (letter == '0' && data[index] == 0) {
-            return matches(data, ++index, size, form.substring(1), control, false);
-        } else if (letter == 'x' && data[index] != 0) {
-            return matches(data, ++index, size, form.substring(1), control, true);
-        } else if (inText){
-            return matches(data, ++index, size, form, control, true);
-        } else {
-            return false;
-        }
-    }
-
-
-    /**
-     * Simple helper method use to check if a value is present in the array.
-     *
-     * @return  true    if the val is present
-     *          false   otherwise
-     */
-    private boolean contains(byte[] arr, byte val) {
-        for (byte b : arr) {
-            if (b == val) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -107,9 +53,9 @@ public class Server {
         while (true) {
             System.out.printf("Listening...\n");
 
-            DatagramPacket packet = this.getReceiveSocket().receive();
-            this.getReceiveSocket().notify(packet, "Received Packet");
-            this.establish(packet);
+            DatagramPacket packet = receive();
+            notify(packet, "Received Packet");
+            establish(packet);
         }
     }
 
