@@ -35,16 +35,6 @@ public class Connection extends SRSocket implements Runnable {
         return this.clientTID;
     }
 
-    //converts an integer into a 2 byte array
-    private byte[] getBlockNumber(int input) {
-        byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
-
-        data[1] = (byte)(input & 0xFF);
-        data[0] = (byte)((input >> 8) & 0xFF);
-
-        return data;
-    }
-
     //extractFilename method only gets called once a RRQ or WRQ Packet has arrived on the server
     //The method extracts the filename from the data portion of the packet
     private String extractFilename(DatagramPacket packet) {
@@ -79,7 +69,7 @@ public class Connection extends SRSocket implements Runnable {
     // TODO: damn is did'nt know this was a keyword, this method is very messy...
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
 
-        Packet packet = new Packet(receivedPacket);
+        Packet packet = new Packet();
 
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
