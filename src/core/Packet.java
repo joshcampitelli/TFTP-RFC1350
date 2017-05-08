@@ -113,6 +113,13 @@ public class Packet {
         }
     }
 
+    /**
+     * @param byte   rw       the read/write byte
+     * @param byte[] mode     the mode byte array
+     * @param byte[] filename the filename byte array
+     *
+     * Builds the master byte array composed from the mode, filename and read/write bytes.
+     */
     public byte[] createRequest(byte rw, byte[] mode, byte[] filename) {
         byte[] request = new byte[2 + filename.length + 1 + mode.length + 1];
         int counter = 2; // filename starts at index 2 

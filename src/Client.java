@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.io.IOException;
 
 import core.SRSocket;
+import core.Packet;
 
 /**
  *
@@ -44,30 +45,6 @@ public class Client extends SRSocket {
         return this.TID;
     }
 
-    /**
-     * Builds the master byte array, composed from the mode, filename, and read/write bytes.
-     *
-     * @param rw the read/write byte
-     * @param mode the mode byte array
-     * @param filename the filename byte array
-     */
-    public byte[] buildRequest(byte rw, byte[] mode, byte[] filename) {
-        byte[] request = new byte[2 + filename.length + 1 + mode.length  + 1];
-        int counter = 0;
-
-        request[0] = 0;            // first '0' byte
-        request[1] = rw;           // read or write request
-        counter += 2;
-
-        System.arraycopy(filename, 0, request, counter, filename.length);
-
-        // must add 1 as there is a '0' byte between filename and mode
-        counter += (filename.length + 1);
-
-        System.arraycopy(mode, 0, request, counter, mode.length);
-        return request;
-    }
-
     public void setMode(int mode) {
         this.connectionMode = mode;
     }
@@ -77,19 +54,21 @@ public class Client extends SRSocket {
     }
 
 	private void sendReceive(byte[] filename, byte[] mode) throws IOException {
-        byte[] request;
         byte rw;
 
         for (int i = 0; i <= 10; i++) {
-            rw = i % 2 == 0 ? REQUEST_READ : REQUEST_WRITE;
-            request = this.buildRequest(i == 10 ? (byte) 4 : rw, mode, filename);
-
             int port = serverPort;
             if (this.getMode() == MODE_TEST) {
                 port = ERRORSIMULATOR_PORT;
             }
 
-            DatagramPacket packet = new DatagramPacket(request, request.length, InetAddress.getLocalHost(), port);
+            DatagramPacket packet;
+
+            if (i % 2 == 0)
+                packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port); 
+            else
+                packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
+
             notifyXtra(packet, "Sending packet");
             send(packet);
 
