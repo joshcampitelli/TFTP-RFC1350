@@ -9,14 +9,14 @@ import java.net.InetAddress;
  */
 public class Packet {
     private DatagramPacket packet;
-    private enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
+    public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
 
     public Packet() {
     }
 
     public Packet(DatagramPacket packet) {
         this.packet = packet;
-    } 
+    }
 
     public DatagramPacket returnPacket(byte[] blocknumber) {
         return returnPacket(blocknumber, packet.getData());
@@ -27,14 +27,14 @@ public class Packet {
     }
 
     /**
-     * @param byte[] blocknumber matching DATA and ACK blocknumber 
+     * @param byte[] blocknumber matching DATA and ACK blocknumber
      */
     public DatagramPacket returnPacket(byte[] blocknumber, byte[] data, InetAddress address, int port) {
         PacketTypes type = checkPacketType(this.packet);
         if (type == PacketTypes.RRQ)        return DATAPacket(new byte[]{0, 1}, data, address, port);
         else if (type == PacketTypes.WRQ)   return ACKPacket(new byte[]{0, 0}, address, port);
-        else if (type == PacketTypes.ACK)   return DATAPacket(blocknumber, data, address, port); 
-        else if (type == PacketTypes.DATA)  return ACKPacket(blocknumber, address, port); 
+        else if (type == PacketTypes.ACK)   return DATAPacket(blocknumber, data, address, port);
+        else if (type == PacketTypes.DATA)  return ACKPacket(blocknumber, address, port);
         else return null;
     }
 
@@ -87,11 +87,11 @@ public class Packet {
     }
 
     /**
-     * 
+     *
      * PacketTypes method uses the matches method to determine the type of packet sent to the server
      * then returns the type as an enum temporarily, could have a class with setPacketType() etc.
      */
-    private PacketTypes checkPacketType(DatagramPacket packet) {
+    public PacketTypes checkPacketType(DatagramPacket packet) {
         byte[] readValues = {1};
         byte[] writeValues = {2};
         byte[] dataValues = {3};
@@ -122,7 +122,7 @@ public class Packet {
      */
     public byte[] createRequest(byte rw, byte[] mode, byte[] filename) {
         byte[] request = new byte[2 + filename.length + 1 + mode.length + 1];
-        int counter = 2; // filename starts at index 2 
+        int counter = 2; // filename starts at index 2
 
         request[0] = 0;
         request[1] = rw;
@@ -144,19 +144,19 @@ public class Packet {
 
     public byte[] WRQ(byte[] mode, byte[] filename) {
         return createRequest((byte) 2, mode, filename);
-    } 
+    }
 
     public byte[] DATA(byte[] blocknumber, byte[] data) {
-        byte[] aarthi = new byte[2 + blocknumber.length];
+        byte[] request = new byte[2 + blocknumber.length + data.length];
         int counter = 2;
 
-        data[1] = 3;
-        System.arraycopy(blocknumber, 0, aarthi, counter, blocknumber.length);
+        request[1] = 3;
+        System.arraycopy(blocknumber, 0, request, counter, blocknumber.length);
 
         counter += blocknumber.length;
 
-        System.arraycopy(data, 0, aarthi, counter, data.length);
-        return aarthi;
+        System.arraycopy(data, 0, request, counter, data.length);
+        return request;
     }
 
     public byte[] ACK(byte[] blocknumber) {
@@ -174,7 +174,7 @@ public class Packet {
         return  new DatagramPacket(data, data.length, packet.getAddress(), packet.getPort());
     }
 
-    /** 
+    /**
      *
      * Creates a DatagramPacket from nothing.
      */
