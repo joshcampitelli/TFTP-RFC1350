@@ -31,8 +31,8 @@ public class Packet {
      */
     public DatagramPacket returnPacket(byte[] blocknumber, byte[] data, InetAddress address, int port) {
         PacketTypes type = checkPacketType(this.packet);
-        if (type == PacketTypes.RRQ)        return DATAPacket(new byte[]{1}, data, address, port);
-        else if (type == PacketTypes.WRQ)   return ACKPacket(new byte[]{0}, address, port);
+        if (type == PacketTypes.RRQ)        return DATAPacket(new byte[]{0, 1}, data, address, port);
+        else if (type == PacketTypes.WRQ)   return ACKPacket(new byte[]{0, 0}, address, port);
         else if (type == PacketTypes.ACK)   return DATAPacket(blocknumber, data, address, port); 
         else if (type == PacketTypes.DATA)  return ACKPacket(blocknumber, address, port); 
         else return null;
