@@ -71,6 +71,7 @@ public class Client extends SRSocket {
             inform(packet, "Sending RRQ packet", true);
             send(packet);
             System.out.printf("Waiting for response from server...\n");
+            fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
@@ -88,7 +89,13 @@ public class Client extends SRSocket {
         serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
         inform(response, "Packet Received", true);
 
-        if (response.getData().length == 514) {
+        // unpack the data portion and write it to the file
+        int length = response.getData().length;
+        byte[] data = new byte[length - 4];
+        System.arraycopy(response.getData(), 4, data, 0, length - 4);
+        fileTransfer.write(data);
+
+        if (response.getData().length == Packet.DATA_SIZE) {
             DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
             ackPacket.setPort(serverPort);
 
