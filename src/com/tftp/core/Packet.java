@@ -37,7 +37,11 @@ public class Packet {
             return true;
         }
 
-        char letter = form.charAt(0);
+        char letter = 0;
+        if (!form.isEmpty()) {
+            letter = form.charAt(0);
+        }
+
         if (letter == 'c' && data[index] == opcode) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == 'n' && (data[index] >= (byte) 0 && data[index] <= (byte) 9)) {
