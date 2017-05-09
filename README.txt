@@ -11,7 +11,7 @@ Programming language: Java.
 Iteration number: 1
 Date: 09/05/2017
 Students (by alphabetical order):
-         Josh Campitelli (1010100050)
+         Josh Campitelli (101010050)
          Ahmed Khattab (100994398)
          Dario Luzuriaga (100911067)
          Ahmed Sakr (101018695)
@@ -19,7 +19,7 @@ Students (by alphabetical order):
 	 
 Breakdown of responsibilities:
 ------------------------------
-Josh Campitelli:
+Josh Campitelli: Helped with the design, writing, and debugging of the project, specifically the handling of packets in the Client and Connection Classes.
 Ahmed Khattab: Worked towards the overall progress of the project including the shutting down of the server and created the UMC and UML diagrams. 
 Dario Luzuriaga:
 Ahmed Sakr:
