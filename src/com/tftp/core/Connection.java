@@ -19,6 +19,7 @@ public class Connection extends SRSocket implements Runnable {
     private FileTransfer fileTransfer;
     private int ackBlock = 0;
     private int dataBlock = 1;
+    private boolean active = true;
 
     public Connection(DatagramPacket packet) throws IOException {
         super(String.format("Connection (Client TID: %d)", packet.getPort()));
@@ -33,6 +34,14 @@ public class Connection extends SRSocket implements Runnable {
 
     public int getClientTID() {
         return this.clientTID;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     //extractFilename method only gets called once a RRQ or WRQ Packet has arrived on the server
@@ -53,7 +62,6 @@ public class Connection extends SRSocket implements Runnable {
         }
 
         file = shrink(file, len);
-        System.out.println("=============" + new String(file) + "==============");
         return new String(file);
     }
 
@@ -70,7 +78,6 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
 
         Packet packet = new Packet();
-        System.out.println(packet.checkPacketType(receivedPacket));
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.WRQ) {
@@ -118,12 +125,8 @@ public class Connection extends SRSocket implements Runnable {
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         byte[] msg = extractData(packet.getData());
-        System.out.printf("MESSAGE LENGTH: %d", msg.length);
         fileTransfer.write(msg);
 
-        if (fileTransfer.isComplete()) {
-            System.out.println("hey im done");
-        }
         DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         ackBlock++;
         return temp;
@@ -133,6 +136,11 @@ public class Connection extends SRSocket implements Runnable {
         DatagramPacket packet = handlePacket(request);
         inform(packet, "Sending Packet");
         send(packet);
+
+        // transfer complete
+        if (fileTransfer != null && fileTransfer.isComplete()) {
+            setActive(false);
+        }
     }
 
     @Override
@@ -141,12 +149,16 @@ public class Connection extends SRSocket implements Runnable {
             while (true) {
                 process(request);
 
+                if (!isActive()) {
+                    break;
+                }
+
                 request = receive();
                 inform(request, "Received Packet");
             }
+
+            System.out.printf("%s completed successfully and is closing...\n", getName());
         } catch (IOException | InvalidPacketException | UnknownIOModeException e) {
-            System.out.println("=================================");
-            e.printStackTrace();
             System.out.printf("%s sent an invalid request. Terminating thread...\n", getName());
         }
     }
