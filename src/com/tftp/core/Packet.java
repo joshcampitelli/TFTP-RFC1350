@@ -12,7 +12,9 @@ import java.util.Arrays;
 public class Packet {
     private DatagramPacket packet;
     public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
-
+    public static int DATA_SIZE = 516;
+    public static int ACK_SIZE = 4;
+    
     public Packet() {
     }
 
