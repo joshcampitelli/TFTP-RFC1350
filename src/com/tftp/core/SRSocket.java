@@ -37,7 +37,7 @@ public class SRSocket extends DatagramSocket {
     }
 
     public DatagramPacket receive() throws IOException {
-        byte[] data = new byte[514];
+        byte[] data = new byte[516];
         DatagramPacket packet = new DatagramPacket(data, data.length);
         this.receive(packet);
 
@@ -99,8 +99,12 @@ public class SRSocket extends DatagramSocket {
     protected byte[] getBlockNumber(int input) {
         byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
 
-        data[1] = (byte)(input & 0xFF);
         data[0] = (byte)((input >> 8) & 0xFF);
+        data[1] = (byte)(input & 0xFF);
+        if (data[1] < 0) {
+            data[0]++;
+            data[1] = 0;
+        }
 
         return data;
     }
