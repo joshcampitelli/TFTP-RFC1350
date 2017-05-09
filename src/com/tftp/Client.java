@@ -1,13 +1,15 @@
+package com.tftp;
+
 import java.util.Scanner;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.io.IOException;
 
-import core.SRSocket;
-import core.Packet;
-import exceptions.UnknownIOModeException;
-import io.FileTransfer;
+import com.tftp.core.SRSocket;
+import com.tftp.core.Packet;
+import com.tftp.exceptions.UnknownIOModeException;
+import com.tftp.io.FileTransfer;
 
 /**
  *
@@ -16,15 +18,15 @@ import io.FileTransfer;
  */
 public class Client extends SRSocket {
 
-    public static byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public static int ERRORSIMULATOR_PORT = 23;
-    public static int MODE_NORMAL = 1, MODE_TEST = 2;
+    public static final byte REQUEST_READ = 1, REQUEST_WRITE = 2;
+    public static final int ERRORSIMULATOR_PORT = 23;
+    public static boolean verbose;
 
     private int TID;
     private int serverPort = 69;
-    private int connectionMode;
     private int dataBlock = 1;
     private int ackBlock = 0;
+    private boolean isNormal = true;
     private FileTransfer fileTransfer;
 
     public Client() throws IOException {
@@ -50,17 +52,13 @@ public class Client extends SRSocket {
         return this.TID;
     }
 
-    public void setMode(int mode) {
-        this.connectionMode = mode;
-    }
-
-    public int getMode() {
-        return this.connectionMode;
+    public void setNormal(boolean normal) {
+        this.isNormal = normal;
     }
 
     private void sendRequest(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
-        if (this.getMode() == MODE_TEST) {
+        if (!this.isNormal) {
             port = ERRORSIMULATOR_PORT;
         }
 
@@ -123,20 +121,16 @@ public class Client extends SRSocket {
             Client client = new Client();
 
             // TODO: implement the normal or test mode prompt to the client
-            String dataMode = client.getInput("Choose Mode: Normal Mode (N), Test Mode (T)");
-            if (dataMode.toLowerCase().equals("n")) {
-                client.setMode(MODE_NORMAL);
-            } else {
-                client.setMode(MODE_TEST);
+            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N)");
+            if (dataMode.toLowerCase().equals("y")) {
+                client.setNormal(false);
             }
 
-            /*
-            String verbosity = client.getInput("Choose Verbosity: Verbose (V), Quiet(Q)");
-            if (mode.toLowerCase().equals("v")) {
 
-            } else {
-
-            }       */
+            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N)");
+            if (verbosity.toLowerCase().equals("y")) {
+                verbose = true;
+            }
 
             String requestType = "";
             while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {

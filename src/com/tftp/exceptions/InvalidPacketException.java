@@ -1,4 +1,4 @@
-package exceptions;
+package com.tftp.exceptions;
 
 import java.lang.Exception;
 

@@ -1,8 +1,8 @@
-package core;
+package com.tftp.core;
 
-import exceptions.InvalidPacketException;
-import exceptions.UnknownIOModeException;
-import io.FileTransfer;
+import com.tftp.exceptions.InvalidPacketException;
+import com.tftp.exceptions.UnknownIOModeException;
+import com.tftp.io.FileTransfer;
 
 import java.net.DatagramPacket;
 import java.io.IOException;

@@ -1,3 +1,5 @@
+package com.tftp;
+
 import java.util.Scanner;
 
 public class QuitListener extends Thread {
