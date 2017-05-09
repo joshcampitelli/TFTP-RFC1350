@@ -117,8 +117,12 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(data, getBlockNumber(dataBlock));
+        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
+
+        // shrink data array to amount of read bytes
+        temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
         dataBlock++;
+        
         return temp;
     }
 
