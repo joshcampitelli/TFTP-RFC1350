@@ -42,7 +42,6 @@ public class SRSocket extends DatagramSocket {
         this.receive(packet);
 
         // reduce the buffer to the size of the data received, if possible
-        System.out.println(packet.getLength());
         data = shrink(packet.getData(), packet.getLength());
         packet.setData(data);
 

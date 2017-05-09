@@ -70,7 +70,7 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
 
         Packet packet = new Packet();
-
+        System.out.println(packet.checkPacketType(receivedPacket));
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.WRQ) {
@@ -80,17 +80,14 @@ public class Connection extends SRSocket implements Runnable {
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
             return dataReceived(receivedPacket);
         } else {
-            //Throw an error
-            System.out.println("Illegal data buffer!!!");
             throw new InvalidPacketException("Illegal data buffer!!!");
-
         }
     }
 
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
     private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(filename, FileTransfer.READ);
+        fileTransfer = new FileTransfer("server-data/" + filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
@@ -103,8 +100,8 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
-        DatagramPacket temp =  new Packet().ACKPacket(getBlockNumber(ackBlock));
+        fileTransfer = new FileTransfer("server-data/" + filename, FileTransfer.WRITE);
+        DatagramPacket temp =  new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         return temp;
     }
 
@@ -113,7 +110,7 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet().DATAPacket(data, getBlockNumber(dataBlock));
+        DatagramPacket temp = new Packet(packet).DATAPacket(data, getBlockNumber(dataBlock));
         dataBlock++;
         return temp;
     }
@@ -122,7 +119,7 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
-        DatagramPacket temp = new Packet().ACKPacket(getBlockNumber(ackBlock));
+        DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         ackBlock++;
         return temp;
     }
