@@ -16,11 +16,20 @@ Students (by alphabetical order):
          Dario Luzuriaga (100911067)
          Ahmed Sakr (101018695)
          Brian Zhang (101008207)
+	 
+Breakdown of responsibilities:
+------------------------------
+Josh Campitelli:
+Ahmed Khattab: Worked towards the overall progress of the project including the shutting down of the server and created the UMC and UML diagrams. 
+Dario Luzuriaga:
+Ahmed Sakr:
+Brian Zhang:
 
 Introduction:
 -------------
 This work consists on the first iteration (or submission) of the term communications project TFTP server-client. It defines a file transfer system based on specification RFC1350. It applies to one server and different client hosts.  
-The project is planned to have 5 steps, submissions or iterations, being this one the initial one. 
+The project is planned to have 5 steps, submissions or iterations, being this one the initial one.
+
 
 Iteration 1:
 ------------
