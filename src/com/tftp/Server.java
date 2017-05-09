@@ -1,11 +1,13 @@
+package com.tftp;
+
 import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
 import java.util.ArrayList;
 
-import core.SRSocket;
-import core.Connection;
-import exceptions.InvalidPacketException;
+import com.tftp.core.SRSocket;
+import com.tftp.core.Connection;
+import com.tftp.exceptions.InvalidPacketException;
 import java.net.SocketException;
 
 /**

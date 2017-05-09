@@ -1,9 +1,11 @@
+package com.tftp;
+
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.HashMap;
 
 import java.io.IOException;
-import core.SRSocket;
+import com.tftp.core.SRSocket;
 
 /**
  *

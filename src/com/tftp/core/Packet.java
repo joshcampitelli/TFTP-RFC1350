@@ -1,4 +1,4 @@
-package core;
+package com.tftp.core;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -96,7 +96,7 @@ public class Packet {
     /**
      * @param byte   the read/write byte
      * @param byte[] the mode byte array
-     * @param byte[] the filename of the file being transferred 
+     * @param byte[] the filename of the file being transferred
      *
      * @return newly constructed read or write byte array
      *
@@ -171,7 +171,7 @@ public class Packet {
 
     /**
      * @param byte[] data for the datagram packet
-     * 
+     *
      * @return datagram packet
      *
      * Creates a DatagramPacket from received DatagramPacket.
@@ -192,7 +192,7 @@ public class Packet {
      * @param byte[] mode byte array
      * @param byte[] filename of the file being transferred
      *
-     * @return read datagram packet 
+     * @return read datagram packet
      */
     public DatagramPacket RRQPacket(byte[] mode, byte[] filename) {
         return createPacket(RRQ(mode, filename));

@@ -1,12 +1,12 @@
-package com.tfto.core;
+package com.tftp.core;
 
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-
 import java.util.Arrays;
-
 import java.io.IOException;
+
+import com.tftp.Client;
 
 /**
  *

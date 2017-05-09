@@ -1,9 +1,9 @@
-package io;
+package com.tftp.io;
 
 import java.io.*;
 import java.lang.AutoCloseable;
 
-import exceptions.UnknownIOModeException;
+import com.tftp.exceptions.UnknownIOModeException;
 
 /**
  * FileTransfer acts as a medium to write/read bytes of data while abstracting the I/O jargon.
