@@ -44,7 +44,7 @@ public class Packet {
 
         if (letter == 'c' && data[index] == opcode) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
-        } else if (letter == 'n' && (data[index] >= (byte) 0 && data[index] <= (byte) 9)) {
+        } else if (letter == 'n' && (data[index] >= (byte) 0 && data[index] <= (byte) 127)) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == '0' && data[index] == 0) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
@@ -132,7 +132,6 @@ public class Packet {
      * @return a data byte array
      */
     public byte[] DATA(byte[] blocknumber, byte[] data) {
-        System.out.println(Arrays.toString(data));
         byte[] request = new byte[2 + blocknumber.length + data.length];
         int counter = 2;
 

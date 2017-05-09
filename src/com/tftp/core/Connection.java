@@ -118,7 +118,12 @@ public class Connection extends SRSocket implements Runnable {
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         byte[] msg = extractData(packet.getData());
+        System.out.printf("MESSAGE LENGTH: %d", msg.length);
         fileTransfer.write(msg);
+
+        if (fileTransfer.isComplete()) {
+            System.out.println("hey im done");
+        }
         DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         ackBlock++;
         return temp;

@@ -74,7 +74,7 @@ public class FileTransfer {
             // safe typecast, no need to worry about runtime errors
             FileOutputStream writer = (FileOutputStream) stream;
             writer.write(b);
-
+            System.out.printf("BLOCK_SIZE: %d", b.length);
             if (b.length < BLOCK_SIZE) {
                 done();
             }

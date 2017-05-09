@@ -108,11 +108,14 @@ public class Client extends SRSocket {
 
         if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
             DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
+            dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
+            System.out.println(Arrays.toString(dataPacket.getData()));
+            System.out.printf("Last block size: %d, data length: %d\n", fileTransfer.lastBlockSize(), dataPacket.getData().length);
             inform(dataPacket, "Sending DATA Packet", true);
             send(dataPacket);
             dataBlock++;
 
-            if (dataPacket.getData().length == 516) {
+            if (!fileTransfer.isComplete()) {
                 wrq();
             }
         }
