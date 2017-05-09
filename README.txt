@@ -16,12 +16,12 @@ Students (by alphabetical order):
          Dario Luzuriaga (100911067)
          Ahmed Sakr (101018695)
          Brian Zhang (101008207)
-	 
+
 Breakdown of responsibilities:
 ------------------------------
 Josh Campitelli: Helped with the design, writing, and debugging of the project, specifically the handling of packets in the Client and Connection Classes.
 Ahmed Khattab: Worked towards the overall progress of the project including the shutting down of the server and created the UMC and UML diagrams. 
-Dario Luzuriaga:
+Dario Luzuriaga: Contributed writing the README.txt instructions, reviewing code and suggesting the users’ interaction with the program. 
 Ahmed Sakr:
 Brian Zhang:
 
@@ -30,14 +30,15 @@ Introduction:
 This work consists on the first iteration (or submission) of the term communications project TFTP server-client. It defines a file transfer system based on specification RFC1350. It applies to one server and different client hosts.  
 The project is planned to have 5 steps, submissions or iterations, being this one the initial one.
 
-
 Iteration 1:
 ------------
 In future submissions some communication errors between the server and clients will be introduced using an error simulation. For this first submission, no errors are assumed to happen, while that possibility is contemplated starting on the second iteration of the project.  
 The general communication procedure is the following. The client specifies an operation mode for the system (to be explained: normal, test, quiet, verbose). The client enters a file name with an extension. The client defines if the file is going to be read from the server or written on it. In this last case the client will transmit to the server the specified file from its default location. Otherwise, it will receive the file from the server. 
 As mentioned before, it is assumed that no eventualities will take place: if the client specifies a file name to be read from the server, it is supposed to exist in the default locations; the files involved will not excess 512 bytes; the communication capacity of the server will not be acceded by the number of clients; no long waiting will occur. 
 The server could be shout down by responding to a request to do so on the server's interface. In that case if any file is being interchanged between client/s and server, they will continue the process until the end of the transfer, but the server will not accept any new request (port 69 or equivalent would be closed). 
+
  
+
 Implementation:
 ---------------
 The project is developed in Java language and Eclipse programming environment. 
@@ -52,6 +53,7 @@ This is the program to be installed on the server's host. It receives read or wr
 
  Modes:
  ------
+
  The client's user can define different modes to appreciate the communication process with the server, as follows. 
  - Normal mode: the basic interaction between client and server is displayed in the client's interface. 
  - Test Mode: it will be used in future iterations, when the error simulator will be implemented to test errors. 
@@ -61,6 +63,7 @@ This is the program to be installed on the server's host. It receives read or wr
 Setup:
 ------
 The file iteration_01.zip contains all the information to import the developing project into several versions of Eclipse, even older versions than the used in programming instances. Such compressed file should be expanded into a folder to be imported in the Eclipse interface by choosing: 
+
 	File -> Import -> General -> Existing Projects into Workspace. 
 
 Running programs: 
