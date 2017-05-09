@@ -11,6 +11,8 @@ import com.tftp.core.Packet;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
+import java.util.Arrays;
+
 /**
  *
  * @author Ahmed Sakr
@@ -110,7 +112,7 @@ public class Client extends SRSocket {
             send(dataPacket);
             dataBlock++;
 
-            if (dataPacket.getData().length == 514) {
+            if (dataPacket.getData().length == 516) {
                 wrq();
             }
         }

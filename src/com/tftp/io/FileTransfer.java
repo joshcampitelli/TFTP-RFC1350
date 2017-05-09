@@ -49,7 +49,7 @@ public class FileTransfer {
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
             lastBlockSize = reader.read(block);
-
+            System.out.println(lastBlockSize);
             if (lastBlockSize < BLOCK_SIZE) {
                 done();
             }
@@ -102,9 +102,7 @@ public class FileTransfer {
      */
     private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException {
         if (mode == READ) {
-            System.out.println("ld: " + this.file.getAbsolutePath());
             stream = new FileInputStream(this.file.getAbsolutePath());
-            //stream = new FileInputStream("C:\\Users\\Ahmed\\Dropbox\\Carleton\\Third Year\\Summer 2017\\SYSC3303\\Project\\test.txt");
         } else if (mode == WRITE) {
             stream = new FileOutputStream(this.file.getAbsolutePath());
         } else {

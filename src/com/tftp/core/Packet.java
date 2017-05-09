@@ -3,6 +3,8 @@ package com.tftp.core;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
+import java.util.Arrays;
+
 /**
  *
  * @author SYSC3303 Team 2
@@ -20,47 +22,32 @@ public class Packet {
 
     /**
      *
-     * @return true     if the val is present
-     *         false    otherwise
-     *
-     * Simple helper method used to check if a value is present in the array.
-     */
-    private boolean contains(byte[] arr, byte val) {
-        for (byte b : arr) {
-            if (b == val) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     *
      * Recursively matches a byte array pattern with the provided form as a string where the following letters in the string are important:
      *
      * - c: stands for control and checks for the given byte with the control byte the array provided
      * - x: stands for don't care, used for skipping a dynamic input that terminates once the next pattern in line is found.
      */
-    protected boolean matches(byte[] data, int size, String form, byte[] control) {
-        return matches(data, 0, size, form, control, false);
+    protected boolean matches(byte[] data, int size, String form, byte opcode) {
+        return matches(data, 0, size, form, opcode, false);
     }
 
-    protected boolean matches(byte[] data, int index, int size, String form, byte[] control, boolean inText) {
+    protected boolean matches(byte[] data, int index, int size, String form, byte opcode, boolean inText) {
         // base case
         if (form.isEmpty() && index == size) {
             return true;
         }
 
         char letter = form.charAt(0);
-        if (letter == 'c' && contains(control, data[index])) {
-            return matches(data, ++index, size, form.substring(1), control, false);
+        if (letter == 'c' && data[index] == opcode) {
+            return matches(data, ++index, size, form.substring(1), opcode, false);
+        } else if (letter == 'n' && (data[index] >= (byte) 0 && data[index] <= (byte) 9)) {
+            return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == '0' && data[index] == 0) {
-            return matches(data, ++index, size, form.substring(1), control, false);
+            return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == 'x' && data[index] != 0) {
-            return matches(data, ++index, size, form.substring(1), control, true);
+            return matches(data, ++index, size, form.substring(1), opcode, true);
         } else if (inText) {
-            return matches(data, ++index, size, form, control, true);
+            return matches(data, ++index, size, form, opcode, true);
         } else {
             return false;
         }
@@ -72,21 +59,17 @@ public class Packet {
      * then returns the type as an enum temporarily, could have a class with setPacketType() etc.
      */
     public PacketTypes checkPacketType(DatagramPacket packet) {
-        byte[] readValues = {1};
-        byte[] writeValues = {2};
-        byte[] dataValues = {3};
-        byte[] ackValues = {4};
-        byte[] errorValues = {5};
+        byte read = 1, write = 2, data = 3, ack = 4, error = 5;
 
-        if (matches(packet.getData(), packet.getLength(), "0cx0x0", readValues)) {
+        if (matches(packet.getData(), packet.getLength(), "0cx0x0", read)) {
             return PacketTypes.RRQ;
-        } else if (matches(packet.getData(), packet.getLength(), "0cx0x0", writeValues)) {
+        } else if (matches(packet.getData(), packet.getLength(), "0cx0x0", write)) {
             return PacketTypes.WRQ;
-        } else if (matches(packet.getData(), packet.getLength(), "0cx", dataValues)) {
+        } else if (matches(packet.getData(), packet.getLength(), "0cnnx", data)) {
             return PacketTypes.DATA;
-        } else if (matches(packet.getData(), packet.getLength(), "0cx", ackValues)) {
+        } else if (matches(packet.getData(), packet.getLength(), "0cnn", ack)) {
             return PacketTypes.ACK;
-        } else if (matches(packet.getData(), packet.getLength(), "0cx0", errorValues)) {
+        } else if (matches(packet.getData(), packet.getLength(), "0cx0", error)) {
             return PacketTypes.ERROR;
         } else {
             return PacketTypes.UNKNOWN;
@@ -145,6 +128,7 @@ public class Packet {
      * @return a data byte array
      */
     public byte[] DATA(byte[] blocknumber, byte[] data) {
+        System.out.println(Arrays.toString(data));
         byte[] request = new byte[2 + blocknumber.length + data.length];
         int counter = 2;
 
