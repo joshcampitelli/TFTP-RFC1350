@@ -85,11 +85,13 @@ public class Client extends SRSocket {
     private void rrq() throws IOException {
         DatagramPacket response = receive();
 
-        serverPort = response.getPort();
+        serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
         inform(response, "Packet Received", true);
 
         if (response.getData().length == 514) {
             DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
+            ackPacket.setPort(serverPort);
+
             inform(ackPacket, "Sending ACK Packet", true);
             send(ackPacket);
             ackBlock++;
@@ -100,7 +102,7 @@ public class Client extends SRSocket {
     private void wrq() throws IOException {
         DatagramPacket response = receive();
 
-        serverPort = response.getPort();
+        serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
         inform(response, "Packet Received", true);
 
         Packet packet = new Packet();
@@ -109,6 +111,8 @@ public class Client extends SRSocket {
         if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
             DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
             dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
+            dataPacket.setPort(serverPort);
+
             System.out.println(Arrays.toString(dataPacket.getData()));
             System.out.printf("Last block size: %d, data length: %d\n", fileTransfer.lastBlockSize(), dataPacket.getData().length);
             inform(dataPacket, "Sending DATA Packet", true);

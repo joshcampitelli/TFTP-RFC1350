@@ -49,7 +49,6 @@ public class ErrorSimulator {
         System.out.printf("ErrorSimulator has successfully launched its operations.\n\n");
 
         while (true) {
-            System.out.printf("Listening...\n");
             DatagramPacket client = this.getReceiveSocket().receive();
             this.getReceiveSocket().inform(client, "Received Packet");
 

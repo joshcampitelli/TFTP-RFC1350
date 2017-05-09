@@ -37,6 +37,8 @@ public class Server extends SRSocket {
         Connection connection = new Connection(packet);
         Thread thread = new Thread(connection, "Connection" + threadNumber++);
         thread.start();
+
+        System.out.printf("[IMPORTANT]: Request received. Established new connection!\n");
     }
 
     /**
@@ -52,8 +54,6 @@ public class Server extends SRSocket {
         System.out.printf("If you would like to shutdown the server, type \"quit\".\n\n");
 
         while (!isClosed()) {
-            System.out.printf("Listening...\n");
-
             DatagramPacket packet = receive();
             inform(packet, "Received Packet");
             establish(packet);
