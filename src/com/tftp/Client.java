@@ -70,7 +70,6 @@ public class Client extends SRSocket {
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-
             fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.WRITE);
             rrq();
         } else {

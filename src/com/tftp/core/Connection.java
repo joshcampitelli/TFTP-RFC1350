@@ -122,7 +122,6 @@ public class Connection extends SRSocket implements Runnable {
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
         dataBlock++;
-
         return temp;
     }
 
