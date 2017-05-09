@@ -70,15 +70,15 @@ public class Client extends SRSocket {
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-            System.out.printf("Waiting for response from server...\n");
-            fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
+
+            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
-            System.out.printf("Waiting for response from server...\n");
-            fileTransfer = new FileTransfer(new String(filename), FileTransfer.READ);
+
+            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
             wrq();
         }
     }
@@ -120,14 +120,14 @@ public class Client extends SRSocket {
             dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
             dataPacket.setPort(serverPort);
 
-            System.out.println(Arrays.toString(dataPacket.getData()));
-            System.out.printf("Last block size: %d, data length: %d\n", fileTransfer.lastBlockSize(), dataPacket.getData().length);
             inform(dataPacket, "Sending DATA Packet", true);
             send(dataPacket);
             dataBlock++;
 
             if (!fileTransfer.isComplete()) {
                 wrq();
+            } else {
+                System.out.println("[IMPORTANT] Transfer complete!");
             }
         }
     }
@@ -136,21 +136,20 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
 
-            // TODO: implement the normal or test mode prompt to the client
-            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N)");
+            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
                 client.setNormal(false);
             }
 
 
-            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N)");
+            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
             if (verbosity.toLowerCase().equals("y")) {
                 verbose = true;
             }
 
             String requestType = "";
             while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
-                requestType = client.getInput("Would you like to Write or Read? (W/R)");
+                requestType = client.getInput("Would you like to Write or Read? (W/R) ");
             }
 
             byte[] filename = client.getInput("Enter file name: ").getBytes();

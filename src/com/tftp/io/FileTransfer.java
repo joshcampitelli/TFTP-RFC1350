@@ -20,6 +20,8 @@ public class FileTransfer {
     public static int READ = 1;
     public static int WRITE = 2;
     public static int BLOCK_SIZE = 512; // 512 bytes
+    public static String SERVER_DIRECTORY = "./data/server/";
+    public static String CLIENT_DIRECTORY = "./data/client/";
 
     private File file;
     private AutoCloseable stream;
@@ -49,7 +51,6 @@ public class FileTransfer {
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
             lastBlockSize = reader.read(block);
-            System.out.println(lastBlockSize);
             if (lastBlockSize < BLOCK_SIZE) {
                 done();
             }

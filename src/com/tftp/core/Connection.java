@@ -94,7 +94,7 @@ public class Connection extends SRSocket implements Runnable {
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
     private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer("server-data/" + filename, FileTransfer.READ);
+        fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
@@ -107,7 +107,7 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer("server-data/" + filename, FileTransfer.WRITE);
+        fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.WRITE);
         DatagramPacket temp =  new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         return temp;
     }
@@ -122,7 +122,7 @@ public class Connection extends SRSocket implements Runnable {
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
         dataBlock++;
-        
+
         return temp;
     }
 
