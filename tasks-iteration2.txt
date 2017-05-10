@@ -1,0 +1,23 @@
+
+SYSC3303A - 10-05-2017 - Meeting 3. 
+
+Iteration 2 tasks:
+
+1)- Make Error Smimulator multi-thread: The error simulator should create a new port for each packet sent and that connection should remain open to receive the response to the response. 
+2)- Make new diagrams. 
+3)- Error handling. 
+4)- Temper and modify the packets to convert them to erroneous packets. 
+5)- Generate a random errors code 4 and 5. 
+6)- Generate errors en both directions: client to server and server to client. Determine how client and server handle errors. 
+7)- Try to recover packet with error code 5. 
+8)- Define connection error handling in the error simulator. This means to define how to deal with errors from the side of client and server. 
+9)- Clean up code, make it consistent in style and add comments. 
+10)- Fix the block numbers for all the packets. 
+11)- Add verbose mode to the server and make the modes multi-thread. 
+12)- Error simulator should invite the user to enter the block number of the packet where to introduce the error. It should ask the user what error code to introduce as well. The Error Simulator should work always on Verbose mode. 
+
+Dario's tasks: 12, 9, 2. 
+Josh's tasks: 8, 6. 
+Ahmed Khattab's tasks: 5,11,2.
+Ahmed S's tasks: 1.
+Brian: _____ .
