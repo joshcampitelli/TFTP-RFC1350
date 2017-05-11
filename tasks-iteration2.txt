@@ -18,6 +18,6 @@ Iteration 2 tasks:
 
 Dario's tasks: 12, 9, 2. 
 Josh's tasks: 8, 6. 
-Ahmed Khattab's tasks: 5,11,2.
+Ahmed Khattab's tasks: 5, 11, 2.
 Ahmed S's tasks: 1.
-Brian: _____ .
+Brian: 3, 5, 7.
