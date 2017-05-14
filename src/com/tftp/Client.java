@@ -1,5 +1,5 @@
-// Import resources
 package com.tftp;
+
 import java.util.Scanner;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -22,10 +22,8 @@ import com.tftp.io.FileTransfer;
  * Date: 16/05/2017
  */
 
-// Define class Client
 public class Client extends SRSocket {
 
-    // Set up variables
     public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
     public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
     public static final String[] ERROR_MESSAGES = { "Illegal TFTP Operation","Unknown transfer ID"};	
@@ -39,11 +37,10 @@ public class Client extends SRSocket {
     private boolean isNormal = true;
     private FileTransfer fileTransfer;
 
-    // Define constructor
     public Client() throws IOException {
         super("Client");
         this.TID = getPort();
-    } // end constructor
+    }
 
     /**
      * Method: getInout
@@ -55,54 +52,53 @@ public class Client extends SRSocket {
      * @return: String
      *  The user's input as a string
      */
-    
-    // Define getInout method
     public String getInput(String text) {
         Scanner scanner = new Scanner(System.in);
         System.out.printf(text);
-        return scanner.nextLine(); // return
-    } // end getInput method
+        return scanner.nextLine();
+    }
 
-    // Define getTID method
     public int getTID() { 
-        return this.TID; // return integer
-    } // end getTID method
+        return this.TID;
+    }
 
-    // Define method for normal mode of operation
     public void setNormal(boolean normal) {
         this.isNormal = normal;
-    } // end method setNormal
+    }
 
-    // Define a method to send a request to a host
+    /**
+     * Define a method to send a request to a host
+     */
     private void sendRequest(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
             port = ERRORSIMULATOR_PORT;
-        } // end sendRequest method
+        }
 
-        // Define a Datagram packet
         DatagramPacket packet;
 
-        // Set conditions to read file from server or
-        // set conditions to write file into the server
+        // Set conditions for transfer to server
         if (requestType.toLowerCase().equals("r")){
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-    	      	// Read file
             fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
-            // Write file
             fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
             wrq();
-        } // end if condition
+        }
     }
 
-    // Define method of reading file request
+    /**
+     * Fulfils the complete life cycle of the read request, by continuously receiving DATA packets
+     * and dispatching corresponding ACK packets.
+     *
+     * @throws IOException may be thrown if the file is inaccessible.
+     */
     private void rrq() throws IOException {
         DatagramPacket response = receive();
 
@@ -123,10 +119,15 @@ public class Client extends SRSocket {
             send(ackPacket);
             ackBlock++;
             rrq();
-        } // end if condition
-    } // end the method rrq
+        }
+    }
 
-    // Define method of writing file request
+    /**
+     * Fulfils the complete life cycle of the write request, by continuously receiving ACK packets
+     * and dispatching corresponding DATA packets.
+     *
+     * @throws IOException may be thrown if the file is inaccessible.
+     */
     private void wrq() throws IOException {
         DatagramPacket response = receive();
 
@@ -149,11 +150,10 @@ public class Client extends SRSocket {
                 wrq();
             } else {
                 System.out.println("[IMPORTANT] Transfer complete!");
-            } // end if condition
-        } // end if condition
-    } // end method wqr
+            }
+        }
+    }
 
-    // Define main program
     public static void main(String[] args) {
         try {
             Client client = new Client();
@@ -182,8 +182,7 @@ public class Client extends SRSocket {
             client.sendRequest(filename, mode, requestType);
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
-        } // end exceptions 
-        
-    } // end main program
+        }   
+    }
     
-} // end class Client
+}
