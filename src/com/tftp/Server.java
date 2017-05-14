@@ -11,11 +11,15 @@ import com.tftp.exceptions.InvalidPacketException;
 import java.net.SocketException;
 
 /**
+ * Server is the main worker and host of all the TFTP operations. Server is equipped with multi-threading to helpful
+ * service multiple clients concurrently.
  *
- * @author Ahmed Sakr
- * @since May the 1st, 2017
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
-
 public class Server extends SRSocket {
 
     private QuitListener quitListener;

@@ -10,28 +10,21 @@ import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
 /**
- * 
- * Project: Server-client/s file transfer system
+ * Client defines and builds the logic for a user capable of transferring files to a pre-defined server port
+ * through the agreed upon TFTP protocol.
+ *
  * Course: Real Time Concurrent Systems
- * Course code: SYSC3303A
- * School: Carleton University
  * Term: Summer 2017
- * Campitelli, Khattab, Luzuriaga, Sakr, Zhang
- * Group: 2
- * Iteration: 2
- * Date: 16/05/2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
-
 public class Client extends SRSocket {
 
-    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
-    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
-    public static final String[] ERROR_MESSAGES = { "Illegal TFTP Operation","Unknown transfer ID"};	
     public static final byte REQUEST_READ = 1, REQUEST_WRITE = 2;
-    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
-    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
     public static final int ERRORSIMULATOR_PORT = 23;
     public static boolean verbose;
+
     private int TID;
     private int serverPort = 69;
     private int dataBlock = 1;
@@ -60,7 +53,7 @@ public class Client extends SRSocket {
         return scanner.nextLine();
     }
 
-    public int getTID() { 
+    public int getTID() {
         return this.TID;
     }
 
@@ -177,14 +170,14 @@ public class Client extends SRSocket {
             while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
                 requestType = client.getInput("Would you like to Write (W) or Read (R)? (W/R) ");
             } // end while statement
-            
+
             // Allow the user to enter the file nname to read or write
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = "octet".getBytes();
             client.sendRequest(filename, mode, requestType);
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
-        }   
+        }
     }
-    
+
 }

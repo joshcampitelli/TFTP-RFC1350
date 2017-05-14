@@ -1,7 +1,11 @@
 package com.tftp.io;
 
-import java.io.*;
 import java.lang.AutoCloseable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import com.tftp.exceptions.UnknownIOModeException;
 
@@ -13,7 +17,8 @@ import com.tftp.exceptions.UnknownIOModeException;
  * FileTransfer determines the last block by reading its length. If its length is less than BLOCK_SIZE,
  * then the last block has been received and the class shall terminate after processing it.
  *
- * @author Ahmed Sakr (SYSC3303 Group 2)
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 6th, 2017.
  */
 public class FileTransfer {
 
@@ -51,6 +56,12 @@ public class FileTransfer {
             FileInputStream reader = (FileInputStream) stream;
             block = new byte[BLOCK_SIZE];
             lastBlockSize = reader.read(block);
+
+            // if nothing was read, lastBlockSize has to be set to 0
+            if (lastBlockSize == -1) {
+                lastBlockSize = 0;
+            }
+
             if (lastBlockSize < BLOCK_SIZE) {
                 done();
             }

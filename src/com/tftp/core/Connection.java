@@ -8,9 +8,14 @@ import java.net.DatagramPacket;
 import java.io.IOException;
 
 /**
+ * Connection allows for the dedicated thread birth for a new transfer request to be serviced. Connection containsKey
+ * all the logic and power to fulfill all the needs of the transfer.
  *
- * @author Carleton Summer 2017 SYSC 3303A Group 2
- * @since May the 5th, 2017
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
 public class Connection extends SRSocket implements Runnable {
 
@@ -109,6 +114,8 @@ public class Connection extends SRSocket implements Runnable {
         String filename = extractFilename(packet);
         fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.WRITE);
         DatagramPacket temp =  new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
+        ackBlock++;
+        
         return temp;
     }
 
