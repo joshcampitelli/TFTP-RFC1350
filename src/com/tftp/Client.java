@@ -21,6 +21,8 @@ import java.util.Arrays;
 public class Client extends SRSocket {
 
     public static final byte REQUEST_READ = 1, REQUEST_WRITE = 2;
+    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
+    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
     public static final int ERRORSIMULATOR_PORT = 23;
     public static boolean verbose;
 
