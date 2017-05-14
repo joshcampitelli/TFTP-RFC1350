@@ -12,9 +12,14 @@ import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
 /**
+ * Client defines and builds the logic for a user capable of transferring files to a pre-defined server port
+ * through the agreed upon TFTP protocol.
  *
- * @author Ahmed Sakr
- * @since May the 1st, 2017
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
 public class Client extends SRSocket {
 
