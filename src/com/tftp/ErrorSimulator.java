@@ -8,11 +8,15 @@ import java.io.IOException;
 import com.tftp.core.SRSocket;
 
 /**
+ * ErrorSimulator aids in testing the rigidty and robustness of the transfer protocol implemented between
+ * the client and server by intentionally tampering with packets to encode an illegal operation.
  *
- * @author Ahmed Sakr
- * @since May the 1st, 2017
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
-
 public class ErrorSimulator {
 
     private static int RECEIVE_PORT = 23;

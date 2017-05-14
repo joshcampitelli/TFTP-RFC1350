@@ -9,11 +9,15 @@ import java.io.IOException;
 import com.tftp.Client;
 
 /**
+ * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
+ * much of the exhaustive setup. Moreover, it also adds helpful and constantly used methods on top of the interface.
  *
- * @author Ahmed Sakr
- * @since May the 2nd, 2017
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 1st, 2017.
  */
-
 public class SRSocket extends DatagramSocket {
 
     private String name;

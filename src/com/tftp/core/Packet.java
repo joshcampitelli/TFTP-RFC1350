@@ -6,15 +6,25 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 /**
+ * Packet allows for creation and detection of all possible packets encountered in the TFTP protocol (i.e. RRQ,
+ * WRQ, DATA, ACK, ERROR, and UNKNOWN).
  *
- * @author SYSC3303 Team 2
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @since May the 8th, 2017.
  */
 public class Packet {
+
     private DatagramPacket packet;
     public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
     public static int DATA_SIZE = 516;
     public static int ACK_SIZE = 4;
-    
+
+    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
+    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
+
     public Packet() {
     }
 
@@ -36,6 +46,10 @@ public class Packet {
     protected boolean matches(byte[] data, int index, int size, String form, byte opcode, boolean inText) {
         // base case
         if (form.isEmpty() && index == size) {
+            return true;
+        }
+
+        if (index == size && form.length() == 1 && form.charAt(0) == 'x') {
             return true;
         }
 
