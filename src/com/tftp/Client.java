@@ -1,31 +1,37 @@
 package com.tftp;
 
 import java.util.Scanner;
-
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.io.IOException;
-
 import com.tftp.core.SRSocket;
 import com.tftp.core.Packet;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
-import java.util.Arrays;
-
 /**
- *
- * @author Ahmed Sakr
- * @since May the 1st, 2017
+ * 
+ * Project: Server-client/s file transfer system
+ * Course: Real Time Concurrent Systems
+ * Course code: SYSC3303A
+ * School: Carleton University
+ * Term: Summer 2017
+ * Campitelli, Khattab, Luzuriaga, Sakr, Zhang
+ * Group: 2
+ * Iteration: 2
+ * Date: 16/05/2017
  */
+
 public class Client extends SRSocket {
 
+    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
+    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
+    public static final String[] ERROR_MESSAGES = { "Illegal TFTP Operation","Unknown transfer ID"};	
     public static final byte REQUEST_READ = 1, REQUEST_WRITE = 2;
     public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
     public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
     public static final int ERRORSIMULATOR_PORT = 23;
     public static boolean verbose;
-
     private int TID;
     private int serverPort = 69;
     private int dataBlock = 1;
@@ -39,20 +45,22 @@ public class Client extends SRSocket {
     }
 
     /**
-     * Scans the console for user input.
+     * Method: getInout
+     * Description: It scans the console for user input.
      *
-     * @param text the text to display when prompting the user for input
+     * @InputParametre: String
+     *  The text to display when prompting the user for input
      *
-     * @return the user input as a string
+     * @return: String
+     *  The user's input as a string
      */
     public String getInput(String text) {
         Scanner scanner = new Scanner(System.in);
         System.out.printf(text);
-
         return scanner.nextLine();
     }
 
-    public int getTID() {
+    public int getTID() { 
         return this.TID;
     }
 
@@ -60,6 +68,9 @@ public class Client extends SRSocket {
         this.isNormal = normal;
     }
 
+    /**
+     * Define a method to send a request to a host
+     */
     private void sendRequest(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
@@ -68,6 +79,7 @@ public class Client extends SRSocket {
 
         DatagramPacket packet;
 
+        // Set conditions for transfer to server
         if (requestType.toLowerCase().equals("r")){
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
@@ -78,12 +90,17 @@ public class Client extends SRSocket {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
-
             fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
             wrq();
         }
     }
 
+    /**
+     * Fulfils the complete life cycle of the read request, by continuously receiving DATA packets
+     * and dispatching corresponding ACK packets.
+     *
+     * @throws IOException may be thrown if the file is inaccessible.
+     */
     private void rrq() throws IOException {
         DatagramPacket response = receive();
 
@@ -107,6 +124,12 @@ public class Client extends SRSocket {
         }
     }
 
+    /**
+     * Fulfils the complete life cycle of the write request, by continuously receiving ACK packets
+     * and dispatching corresponding DATA packets.
+     *
+     * @throws IOException may be thrown if the file is inaccessible.
+     */
     private void wrq() throws IOException {
         DatagramPacket response = receive();
 
@@ -123,7 +146,7 @@ public class Client extends SRSocket {
 
             inform(dataPacket, "Sending DATA Packet", true);
             send(dataPacket);
-            dataBlock++;
+            dataBlock++; // move through the blacks of data
 
             if (!fileTransfer.isComplete()) {
                 wrq();
@@ -137,27 +160,31 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
 
+            // Allow the user to choose between normal or test modes
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
                 client.setNormal(false);
-            }
+            } // end try
 
-
+            // Allow the user to choose between quiet or verbose modes
             String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
             if (verbosity.toLowerCase().equals("y")) {
                 verbose = true;
-            }
+            } // end if condition
 
+            // Allow the user to read from the server or write a file to the server
             String requestType = "";
             while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
-                requestType = client.getInput("Would you like to Write or Read? (W/R) ");
-            }
-
+                requestType = client.getInput("Would you like to Write (W) or Read (R)? (W/R) ");
+            } // end while statement
+            
+            // Allow the user to enter the file nname to read or write
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = "octet".getBytes();
             client.sendRequest(filename, mode, requestType);
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
-        }
+        }   
     }
+    
 }
