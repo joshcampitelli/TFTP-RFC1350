@@ -1,9 +1,11 @@
 package com.tftp;
 
 import java.util.Scanner;
+
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.io.IOException;
+
 import com.tftp.core.SRSocket;
 import com.tftp.core.Packet;
 import com.tftp.exceptions.UnknownIOModeException;
@@ -38,18 +40,16 @@ public class Client extends SRSocket {
     }
 
     /**
-     * Method: getInout
-     * Description: It scans the console for user input.
+     * Scans the console for user input.
      *
-     * @InputParametre: String
-     *  The text to display when prompting the user for input
+     * @param text the text to display when prompting the user for input
      *
-     * @return: String
-     *  The user's input as a string
+     * @return the user input as a string
      */
     public String getInput(String text) {
         Scanner scanner = new Scanner(System.in);
         System.out.printf(text);
+
         return scanner.nextLine();
     }
 
@@ -61,9 +61,6 @@ public class Client extends SRSocket {
         this.isNormal = normal;
     }
 
-    /**
-     * Define a method to send a request to a host
-     */
     private void sendRequest(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
@@ -72,7 +69,6 @@ public class Client extends SRSocket {
 
         DatagramPacket packet;
 
-        // Set conditions for transfer to server
         if (requestType.toLowerCase().equals("r")){
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
@@ -83,68 +79,59 @@ public class Client extends SRSocket {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
+
             fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
             wrq();
         }
     }
 
-    /**
-     * Fulfils the complete life cycle of the read request, by continuously receiving DATA packets
-     * and dispatching corresponding ACK packets.
-     *
-     * @throws IOException may be thrown if the file is inaccessible.
-     */
     private void rrq() throws IOException {
-        DatagramPacket response = receive();
+        DatagramPacket response;
+        do {
+            response = receive();
 
-        serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
-        inform(response, "Packet Received", true);
+            serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
+            inform(response, "Packet Received", true);
 
-        // unpack the data portion and write it to the file
-        int length = response.getData().length;
-        byte[] data = new byte[length - 4];
-        System.arraycopy(response.getData(), 4, data, 0, length - 4);
-        fileTransfer.write(data);
+            // unpack the data portion and write it to the file
+            int length = response.getData().length;
+            byte[] data = new byte[length - 4];
+            System.arraycopy(response.getData(), 4, data, 0, length - 4);
+            fileTransfer.write(data);
 
-        if (response.getData().length == Packet.DATA_SIZE) {
             DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
             ackPacket.setPort(serverPort);
 
             inform(ackPacket, "Sending ACK Packet", true);
             send(ackPacket);
             ackBlock++;
-            rrq();
-        }
+        } while (response.getData().length == Packet.DATA_SIZE);
     }
 
-    /**
-     * Fulfils the complete life cycle of the write request, by continuously receiving ACK packets
-     * and dispatching corresponding DATA packets.
-     *
-     * @throws IOException may be thrown if the file is inaccessible.
-     */
     private void wrq() throws IOException {
-        DatagramPacket response = receive();
+        DatagramPacket response;
+        while(true) {
+            response = receive();
 
-        serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
-        inform(response, "Packet Received", true);
+            serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
+            inform(response, "Packet Received", true);
 
-        Packet packet = new Packet();
-        byte[] data = fileTransfer.read();
+            Packet packet = new Packet();
+            byte[] data = fileTransfer.read();
 
-        if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-            DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
-            dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
-            dataPacket.setPort(serverPort);
+            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
+                DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
+                dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
+                dataPacket.setPort(serverPort);
 
-            inform(dataPacket, "Sending DATA Packet", true);
-            send(dataPacket);
-            dataBlock++; // move through the blacks of data
+                inform(dataPacket, "Sending DATA Packet", true);
+                send(dataPacket);
+                dataBlock++;
 
-            if (!fileTransfer.isComplete()) {
-                wrq();
-            } else {
-                System.out.println("[IMPORTANT] Transfer complete!");
+                if (fileTransfer.isComplete()) {
+                    System.out.println("[IMPORTANT] Transfer complete!");
+                    break;
+                }
             }
         }
     }
@@ -153,25 +140,22 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
 
-            // Allow the user to choose between normal or test modes
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
                 client.setNormal(false);
-            } // end try
+            }
 
-            // Allow the user to choose between quiet or verbose modes
+
             String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
             if (verbosity.toLowerCase().equals("y")) {
                 verbose = true;
-            } // end if condition
+            }
 
-            // Allow the user to read from the server or write a file to the server
             String requestType = "";
             while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
-                requestType = client.getInput("Would you like to Write (W) or Read (R)? (W/R) ");
-            } // end while statement
+                requestType = client.getInput("Would you like to Write or Read? (W/R) ");
+            }
 
-            // Allow the user to enter the file nname to read or write
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = "octet".getBytes();
             client.sendRequest(filename, mode, requestType);
@@ -179,5 +163,4 @@ public class Client extends SRSocket {
             e.printStackTrace();
         }
     }
-
 }
