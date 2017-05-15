@@ -23,6 +23,12 @@ public class PacketModification {
 
     private boolean matchAny = false;
 
+    /*public byte[] apply(DatagramPacket packet) {
+        if (errorType == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
+
+        }
+    }*/
+
     /**
      * Sets the lookout attributes (i.e. block number and packet type) to the specific parameters.
      * Once set, this packet modification requirements will be met when the lookout attributes match.
@@ -47,6 +53,10 @@ public class PacketModification {
     }
 
 
+    public int getErrorType() {
+        return this.errorType;
+    }
+
     /**
      * Checks if the DatagramPacket target matches the lookout variables.
      *
@@ -56,7 +66,7 @@ public class PacketModification {
     public boolean isMatchingPacket(DatagramPacket target) {
         Packet packet = new Packet();
         int blocknum = getBlockUnsigned(target);
-        System.out.printf("target: %s, value: %s\n", packet.checkPacketType(target), packetType);
+
         if (matchAny) {
             return packet.checkPacketType(target) == packetType || blocknum == blockNumber;
         } else {
