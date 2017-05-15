@@ -60,9 +60,9 @@ public class SRSocket extends DatagramSocket {
     }
 
     public void inform(DatagramPacket packet, String event, boolean extra) {
-        /*if (!Client.verbose) {
+        if (!Client.verbose) {
             return;
-        }*/
+        }
 
         int len = packet.getLength();
         System.out.printf("%s: %s:\n", this.name, event);
