@@ -22,8 +22,8 @@ public class Packet {
     public static int DATA_SIZE = 516;
     public static int ACK_SIZE = 4;
 
-    public static final byte[] ERROR_ILLEGAL_TFTP_OPERATION = 04;
-    public static final byte[] ERROR_UNKNOWN_TRANSFER_ID = 05;
+    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
+    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
 
     public Packet() {
     }
