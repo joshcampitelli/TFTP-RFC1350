@@ -105,10 +105,6 @@ public class SRSocket extends DatagramSocket {
 
         data[0] = (byte)((input >> 8) & 0xFF);
         data[1] = (byte)(input & 0xFF);
-        if (data[1] < 0) {
-            data[0]++;
-            data[1] = 0;
-        }
 
         return data;
     }

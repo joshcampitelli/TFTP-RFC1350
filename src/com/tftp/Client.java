@@ -90,7 +90,7 @@ public class Client extends SRSocket {
         do {
             response = receive();
 
-            serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
+            serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
             // unpack the data portion and write it to the file
@@ -113,7 +113,7 @@ public class Client extends SRSocket {
         while(true) {
             response = receive();
 
-            serverPort = isNormal ? response.getPort() : ERRORSIMULATOR_PORT;
+            serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
             Packet packet = new Packet();

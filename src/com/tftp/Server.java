@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Connection;
+import com.tftp.workers.QuitListener;
 import com.tftp.exceptions.InvalidPacketException;
 import java.net.SocketException;
 
