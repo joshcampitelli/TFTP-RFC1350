@@ -2,7 +2,6 @@ package com.tftp.simulation;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.ArrayList;
 
 import java.io.IOException;
@@ -25,12 +24,10 @@ public class ErrorSimulator extends SRSocket {
     private static int RECEIVE_PORT = 23;
     private static int SERVER_PORT = 69;
 
-    private HashMap<Integer, Integer> router;
     private ArrayList<PacketModification> modifications;
 
     public ErrorSimulator() throws IOException {
         super("ErrorSimulator, Main Socket 'R'", RECEIVE_PORT);
-        this.router = new HashMap<>();
         this.modifications = new ArrayList<>();
     }
 
@@ -39,13 +36,11 @@ public class ErrorSimulator extends SRSocket {
     }
 
     /**
-     * Mutate, if applicable, the packet to the specified Modification in the list of modifications.
-     * External Synchronization on the arraylist as it is not thread-safe to loop and access the elements
-     * unless the lock is obtained.
+     * Acquires the modification for the packet provided.
      *
-     * @return the new mutated byte array.
+     * @return the PacketModification object corresponding to the packet.
      */
-    public byte[] mutate(DatagramPacket packet) {
+    public PacketModification getModification(DatagramPacket packet) {
         PacketModification rule = null;
         synchronized (modifications) {
             for (PacketModification modification : modifications) {
@@ -60,14 +55,7 @@ public class ErrorSimulator extends SRSocket {
             }
         }
 
-        // no PacketModification rule was found for this packet
-        if (rule == null) {
-            return packet.getData();
-        }
-
-
-
-        return packet.getData();
+        return rule;
     }
 
 
@@ -81,6 +69,7 @@ public class ErrorSimulator extends SRSocket {
 
     public void simulate() throws IOException {
         System.out.printf("ErrorSimulator has successfully launched its operations.\n\n");
+        int sessions = 0;
 
         while (true) {
             DatagramPacket client = receive();
@@ -99,57 +88,15 @@ public class ErrorSimulator extends SRSocket {
             DatagramPacket result = this.produceFrom(response, client.getPort(), client.getAddress());
 
             MutableSession session = new MutableSession(this, result, client.getPort(), response.getPort());
-            new Thread(session, "Session" + router.size()).start();
+            new Thread(session, "Session" + sessions++).start();
         }
     }
 
     public static void main(String[] args) {
         try {
             ErrorSimulator simulator = new ErrorSimulator();
-            simulator.addModification(10, PacketTypes.DATA, false, Packet.ERROR_ILLEGAL_TFTP_OPERATION);
+            simulator.addModification(13, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
             simulator.simulate();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-}
-
-class MutableSession extends SRSocket implements Runnable {
-
-    ErrorSimulator simulator;
-    int source, dest;
-
-    MutableSession(ErrorSimulator simulator, DatagramPacket result, int source, int dest) throws IOException {
-        super(String.format("Mutable Session (client tid: %d)", source));
-        this.source = source;
-        this.dest = dest;
-        this.simulator = simulator;
-
-        inform(result, "Sending Packet");
-        send(result);
-    }
-
-
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                DatagramPacket client = receive();
-                inform(client, "Received Packet");
-
-                client.setData(simulator.mutate(client));
-
-                DatagramPacket server = simulator.produceFrom(client, dest, InetAddress.getLocalHost());
-                inform(server, "Sending Packet");
-                send(server);
-
-                DatagramPacket response = receive();
-                inform(response, "Received Packet");
-
-                DatagramPacket result = simulator.produceFrom(response, source, client.getAddress());
-                inform(result, "Sending Packet");
-                send(result);
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }

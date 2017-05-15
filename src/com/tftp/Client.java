@@ -112,13 +112,14 @@ public class Client extends SRSocket {
         DatagramPacket response;
         while(true) {
             response = receive();
-
+            
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
             Packet packet = new Packet();
             byte[] data = fileTransfer.read();
 
+            System.out.println(packet.checkPacketType(response));
             if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
                 DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));

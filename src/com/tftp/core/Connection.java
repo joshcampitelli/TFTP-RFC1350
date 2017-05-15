@@ -115,7 +115,7 @@ public class Connection extends SRSocket implements Runnable {
         fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.WRITE);
         DatagramPacket temp =  new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         ackBlock++;
-        
+
         return temp;
     }
 
@@ -136,7 +136,7 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
-
+        
         DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
         ackBlock++;
         return temp;
