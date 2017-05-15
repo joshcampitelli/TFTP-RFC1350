@@ -112,14 +112,13 @@ public class Client extends SRSocket {
         DatagramPacket response;
         while(true) {
             response = receive();
-            
+
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
             Packet packet = new Packet();
             byte[] data = fileTransfer.read();
 
-            System.out.println(packet.checkPacketType(response));
             if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
                 DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
@@ -159,6 +158,8 @@ public class Client extends SRSocket {
 
             byte[] filename = client.getInput("Enter file name: ").getBytes();
             byte[] mode = "octet".getBytes();
+            
+            System.out.printf("[IMPORTANT] Beginning file transfer of \"%s\" with server!\n", new String(filename));
             client.sendRequest(filename, mode, requestType);
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
