@@ -62,7 +62,7 @@ public class Packet {
             return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == '0' && data[index] == 0) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
-        } else if (letter == 'x' && data[index] != 0) {
+        } else if (letter == 'x') {
             return matches(data, ++index, size, form.substring(1), opcode, true);
         } else if (letter == 'n') {
             return matches(data, ++index, size, form.substring(1), opcode, false);

@@ -124,10 +124,20 @@ public class ErrorSimulator extends SRSocket {
     public static void main(String[] args) {
         try {
             ErrorSimulator simulator = new ErrorSimulator();
-            simulator.addModification(13, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+            simulator.presetModifications();
             simulator.simulate();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * A preset for modifications to be added to the Packet Modifications list.
+     * IMPORTANT: add and remove as many as you want while testing.
+     */
+    public void presetModifications() {
+        addModification(5, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        addModification(7, PacketTypes.ACK, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        addModification(9, PacketTypes.DATA, false, Packet.ERROR_ILLEGAL_TFTP_OPERATION);
     }
 }

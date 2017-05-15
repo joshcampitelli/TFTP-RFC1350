@@ -49,6 +49,7 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private DatagramPacket mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
+        System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
         if (modification.getErrorType() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
             return simulateInvalidTID(packet, destination, sendOnly);
         } else if (modification.getErrorType() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {

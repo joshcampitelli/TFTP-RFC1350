@@ -84,4 +84,9 @@ public class PacketModification {
 
         return blocknum;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Modification for packet blocknumber #%d and packet type: %s", blockNumber, packetType);
+    }
 }
