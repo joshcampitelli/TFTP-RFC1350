@@ -59,7 +59,7 @@ public class ErrorSimulator extends SRSocket {
     }
 
 
-    public void addModification(int blocknumber, PacketTypes type, boolean matchAny, int errorType) {
+    public void addModification(int blocknumber, PacketTypes type, boolean matchAny, byte errorType) {
         PacketModification modification = new PacketModification();
         modification.setPacketParameters(blocknumber, type, matchAny);
         modification.setErrorType(errorType);
