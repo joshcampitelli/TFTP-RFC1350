@@ -19,7 +19,7 @@ public class PacketModification {
 
     private int blockNumber = -1;
     private PacketTypes packetType = PacketTypes.UNKNOWN;
-    private int errorType = Packet.ERROR_ILLEGAL_TFTP_OPERATION;
+    private byte[] errorType = Packet.ERROR_ILLEGAL_TFTP_OPERATION;
 
     private boolean matchAny = false;
 
@@ -42,7 +42,7 @@ public class PacketModification {
      * Sets the type of error the modified packet should produce. When providing the value, please only use
      * the static constants in Packet. (i.e. ERROR_UNKNOWN_TRANSFER_ID and ERROR_ILLEGAL_TFTP_OPERATION)
      */
-    public void setErrorType(int error) {
+    public void setErrorType(byte[] error) {
         this.errorType = error;
     }
 
