@@ -6,8 +6,8 @@ import com.tftp.core.Packet;
 import com.tftp.core.Packet.PacketTypes;
 
 /**
- * ErrorSimulator aids in testing the rigidty and robustness of the transfer protocol implemented between
- * the client and server by intentionally tampering with packets to encode an illegal operation.
+ * PacketModification provides the template for selecting certain packets and deciding how to corrupt them
+ * to produce certain errors.
  *
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
@@ -22,12 +22,6 @@ public class PacketModification {
     private byte errorType = Packet.ERROR_ILLEGAL_TFTP_OPERATION;
 
     private boolean matchAny = false;
-
-    /*public byte[] apply(DatagramPacket packet) {
-        if (errorType == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
-
-        }
-    }*/
 
     /**
      * Sets the lookout attributes (i.e. block number and packet type) to the specific parameters.
@@ -53,6 +47,10 @@ public class PacketModification {
     }
 
 
+    /**
+     *
+     * @return the error type of this instance
+     */
     public int getErrorType() {
         return this.errorType;
     }
