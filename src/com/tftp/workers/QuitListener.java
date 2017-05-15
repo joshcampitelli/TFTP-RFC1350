@@ -1,6 +1,7 @@
-package com.tftp;
+package com.tftp.workers;
 
 import java.util.Scanner;
+import com.tftp.Server;
 
 /**
  * QuitListener is an independent thread that listens on the main server console for input, specifically "quit".

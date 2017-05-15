@@ -60,12 +60,12 @@ public class Packet {
 
         if (letter == 'c' && data[index] == opcode) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
-        } else if (letter == 'n' && (data[index] >= (byte) 0 && data[index] <= (byte) 127)) {
-            return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == '0' && data[index] == 0) {
             return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (letter == 'x' && data[index] != 0) {
             return matches(data, ++index, size, form.substring(1), opcode, true);
+        } else if (letter == 'n') {
+            return matches(data, ++index, size, form.substring(1), opcode, false);
         } else if (inText) {
             return matches(data, ++index, size, form, opcode, true);
         } else {
