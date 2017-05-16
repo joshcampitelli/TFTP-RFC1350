@@ -176,12 +176,12 @@ public class Packet {
      *
      * @return a error byte array
      */
-    public byte[] ERROR(byte[] errorCode, byte[] errorMsg) {
+    public byte[] ERROR(byte errorCode, byte[] errorMsg) {
         // 5 because last byte is 0
         byte[] error = new byte[5 + errorMsg.length];
 
         error[1] = 5;
-        System.arraycopy(errorCode, 0, error, 2, 2);
+        error[3] = errorCode;
         System.arraycopy(errorMsg, 0, error, 4, errorMsg.length);
 
         return error;
@@ -260,11 +260,11 @@ public class Packet {
      *
      * @return error datagram packet
      */
-    public DatagramPacket ERRORPacket(byte[] errorCode, byte[] errorMsg) {
+    public DatagramPacket ERRORPacket(byte errorCode, byte[] errorMsg) {
         return createPacket(ERROR(errorCode, errorMsg));
     }
 
-    public DatagramPacket ERRORPacket(byte[] errorCode, byte[] errorMsg, InetAddress address, int port) {
+    public DatagramPacket ERRORPacket(byte errorCode, byte[] errorMsg, InetAddress address, int port) {
         return createPacket(ERROR(errorCode, errorMsg), address, port);
     }
 }

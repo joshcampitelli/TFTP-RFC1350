@@ -90,7 +90,9 @@ public class Connection extends SRSocket implements Runnable {
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ACK) {
             return ackReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
-            return dataReceived(receivedPacket);
+            return dataReceived(receivedPacket); 
+        } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ERROR) {
+            return errorReceived(receivedPacket);
         } else {
             throw new InvalidPacketException("Illegal data buffer!!!");
         }
@@ -121,25 +123,37 @@ public class Connection extends SRSocket implements Runnable {
 
     //Ack Received gets the bytes from the FileTransfer Object then sends DATA1 Packet
     private DatagramPacket ackReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        //Send Data from the file
-        byte[] data = fileTransfer.read();
+        if (clientTID != packet.getPort()) {
+            return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes());
+        } else {
+            //Send Data from the file
+            byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
+            DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
 
-        // shrink data array to amount of read bytes
-        temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
-        dataBlock++;
-        return temp;
+            // shrink data array to amount of read bytes
+            temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
+            dataBlock++;
+            return temp;
+        }
     }
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        byte[] msg = extractData(packet.getData());
-        fileTransfer.write(msg);
-        
-        DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
-        ackBlock++;
-        return temp;
+        if (clientTID != packet.getPort()) {
+            return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes());
+        } else {
+            byte[] msg = extractData(packet.getData());
+            fileTransfer.write(msg);
+            
+            DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
+            ackBlock++;
+            return temp;
+        }
+    }
+
+    private DatagramPacket errorReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+        return packet;
     }
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
