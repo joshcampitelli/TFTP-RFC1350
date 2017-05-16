@@ -101,7 +101,14 @@ public class Client extends SRSocket {
             if (ackBlock == 0)
                 connectionTID = response.getPort();
 
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID);
+            int blockNumber = -1;
+            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
+                blockNumber = ackBlock;
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
+                blockNumber = dataBlock;
+            }
+
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
                 send(errorPacket);
                 System.out.println("Terminating Client...");
@@ -158,7 +165,14 @@ public class Client extends SRSocket {
             if (dataBlock == 1)
                 connectionTID = response.getPort();
 
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID);
+            int blockNumber = -1;
+            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
+                blockNumber = ackBlock;
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
+                blockNumber = dataBlock;
+            }
+
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
                 send(errorPacket);
                 System.out.println("Terminating Client...");
