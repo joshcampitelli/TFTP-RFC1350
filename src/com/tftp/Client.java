@@ -123,12 +123,23 @@ public class Client extends SRSocket {
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
                 ackBlock++;
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
+                byte[] errorMsg = new byte[response.getLength() - 4];
+                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
+                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+                System.out.println("Terminating Client...");
+                break;
             } else {
                 String errorMsg = "Incorrect Packet Received";
                 send(packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()));    //Send error packet with error code 4.
+                System.out.println("Terminating Client...");
                 break;
             }
         } while (response.getData().length == Packet.DATA_SIZE);
+
+        if (fileTransfer.isComplete()) {
+            System.out.println("[IMPORTANT] Transfer complete!");
+        }
     }
 
     private void wrq() throws IOException {
@@ -171,9 +182,16 @@ public class Client extends SRSocket {
                     System.out.println("[IMPORTANT] Transfer complete!");
                     break;
                 }
-            } else {    //Received something other than an ACK Packet, return an error packet
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
+                byte[] errorMsg = new byte[response.getLength() - 4];
+                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
+                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+                System.out.println("Terminating Client...");
+                break;
+            } else {    //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
                 String errorMsg = "Incorrect Packet Received";
                 send(packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()));    //Send error packet with error code 4.
+                System.out.println("Terminating Client...");
                 break;
             }
         }

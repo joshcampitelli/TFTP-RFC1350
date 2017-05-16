@@ -136,8 +136,8 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        addModification(1, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
-        addModification(1, PacketTypes.ACK, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
-        addModification(1, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        addModification(2, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        //addModification(1, PacketTypes.ACK, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        //addModification(1, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
     }
 }

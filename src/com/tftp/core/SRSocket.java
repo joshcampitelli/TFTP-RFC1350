@@ -134,6 +134,7 @@ public class SRSocket extends DatagramSocket {
         DatagramPacket errorPacket;
         Packet packet = new Packet(received);
 
+        //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
         if (received.getPort() != expectedTID) { //Incorrect TID
             errorMsg = "Incorrect TID";
             errorPacket = packet.ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
@@ -147,7 +148,7 @@ public class SRSocket extends DatagramSocket {
             errorPacket = null;
         }
         if (errorPacket != null)
-            System.out.println("Error Packet Received: Error Code: 0" + errorPacket.getData()[3] + ", Error Message: " + errorMsg);
+            System.out.println("Error Packet Detected: Error Code: 0" + errorPacket.getData()[3] + ", Error Message: " + errorMsg);
 
         return errorPacket;
     }

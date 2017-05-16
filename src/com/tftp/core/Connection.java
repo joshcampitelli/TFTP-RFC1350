@@ -81,17 +81,15 @@ public class Connection extends SRSocket implements Runnable {
     //Handles the different types of packets sent to the server, returns the returnPacket to go back to client (ACK/DATA)
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
 
-        //Need to implement error checking here... build the error packets then return errorReceived(errorPacket)
-        //which will handle the server's response
         DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID);
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
-
+            return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-            send(errorPacket);
+            return new Packet(receivedPacket).ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes(), receivedPacket.getAddress(), receivedPacket.getPort());
         }
 
-        Packet packet = new Packet();
-        
+        Packet packet = new Packet(receivedPacket);
+
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.WRQ) {
@@ -146,42 +144,60 @@ public class Connection extends SRSocket implements Runnable {
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        if (clientTID != packet.getPort()) {
-            return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes());
-        } else {
-            byte[] msg = extractData(packet.getData());
-            fileTransfer.write(msg);
+        byte[] msg = extractData(packet.getData());
+        fileTransfer.write(msg);
 
-            DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
-            ackBlock++;
-            return temp;
+        DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
+        ackBlock++;
+        return temp;
+    }
+
+    //Error Received handles the error packets which are sent to the server, different from detecting errors
+    //No matter which error the Connection RECEIVES it shuts down. This is because if it receives an error
+    //Packet that means the client has sent it an error, if its TID then the Connection is communicating with
+    //The incorrect client.
+    private DatagramPacket errorReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+        //Close the connection, since it received the error packet the client has already shut down
+        //Upon detecting an illegal TFTP the connection must inform the client by sending error packet
+        if (packet.getData()[3] == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
+            //If the Server receives an invalid TID it must terminate, this means the Server is communicating with an incorrect Client
+            System.out.println("Error Packet Received: Error Code: 0" + packet.getData()[3] + ", Error Message: Unknown transfer ID");
+            return null;
+        } else {
+            //Which essentially closes the Connection, if we have received an error type 4 the Client has already shut down
+            System.out.println("Error Packet Received: Error Code: 0" + packet.getData()[3] + ", Error Message: Illegal TFTP Operation");
+            return null;
         }
     }
 
-    private DatagramPacket errorReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        return packet;
-    }
-
-    private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
+    private boolean process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
         DatagramPacket packet = handlePacket(request);
-        inform(packet, "Sending Packet", true);
+
+        if (packet == null)
+            return false;
+
+        inform(packet, "Sending Packet");
+
         send(packet);
 
         // transfer complete
         if (fileTransfer != null && fileTransfer.isComplete()) {
             setActive(false);
         }
+        return true;
     }
 
     @Override
     public void run() {
+        boolean var;
         try {
             while (true) {
-                process(request);
+                var = process(request);
+                if (!var)
+                    throw new InvalidPacketException("");
 
-                if (!isActive()) {
+                if (!isActive())
                     break;
-                }
 
                 request = receive();
                 inform(request, "Received Packet");
