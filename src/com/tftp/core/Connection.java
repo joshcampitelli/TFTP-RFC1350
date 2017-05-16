@@ -81,15 +81,20 @@ public class Connection extends SRSocket implements Runnable {
 
     //Handles the different types of packets sent to the server, returns the returnPacket to go back to client (ACK/DATA)
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
+        int blockNumber = -1;
+        Packet packet = new Packet(receivedPacket);
+        if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ACK) {
+            blockNumber = ackBlock;
+        } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
+            blockNumber = dataBlock;
+        }
 
-        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID);
+        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
             return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
             return new Packet(receivedPacket).ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes(), receivedPacket.getAddress(), receivedPacket.getPort());
         }
-
-        Packet packet = new Packet(receivedPacket);
 
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
