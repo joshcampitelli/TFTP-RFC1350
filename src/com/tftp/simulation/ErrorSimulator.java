@@ -22,7 +22,6 @@ import com.tftp.core.Packet.PacketTypes;
 public class ErrorSimulator extends SRSocket {
 
     private static int RECEIVE_PORT = 23;
-    private static int SERVER_PORT = 69;
     private ArrayList<PacketModification> modifications;
     private SRSocket serverSocket;
 
@@ -79,17 +78,26 @@ public class ErrorSimulator extends SRSocket {
      * synchronization has encapsulated the critical section and it should be safe to do so.
      *
      * @param blocknumber the block number the packet must match to be considered for modification
+     * @param errorId the error packet id to which it should belong to
      * @param type The type of packet it must be to be considered for modification
-     * @param matchAny if true, any of the lookout variables being matched will result in a modification
      * @param errorType The type of error packet to produce from the modification
      */
-    public void addModification(int blocknumber, PacketTypes type, boolean matchAny, byte errorType) {
+    public void addModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
         PacketModification modification = new PacketModification();
-        modification.setPacketParameters(blocknumber, type, matchAny);
+        modification.setPacketParameters(blocknumber, type);
+        modification.setErrorId(errorId);
         modification.setErrorType(errorType);
 
         synchronized (modifications) {
             this.modifications.add(modification);
+        }
+    }
+
+    public void popModification() {
+        synchronized (modifications) {
+            if (!modifications.isEmpty()) {
+                modifications.remove(0);
+            }
         }
     }
 
@@ -108,15 +116,7 @@ public class ErrorSimulator extends SRSocket {
             DatagramPacket client = receive();
             inform(client, "Received Packet");
 
-            DatagramPacket server = this.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
-            serverSocket.inform(server, "Sending Packet");
-            serverSocket.send(server);
-
-            DatagramPacket response = serverSocket.receive();
-            serverSocket.inform(response, "Received Packet");
-
-            DatagramPacket result = this.produceFrom(response, client.getPort(), client.getAddress());
-            MutableSession session = new MutableSession(this, result, client.getPort(), response.getPort());
+            MutableSession session = new MutableSession(this, client, client.getPort());
             new Thread(session, "Session" + sessions++).start();
         }
     }
@@ -136,8 +136,8 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        addModification(1, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
-        addModification(1, PacketTypes.ACK, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
-        addModification(1, PacketTypes.DATA, false, Packet.ERROR_UNKNOWN_TRANSFER_ID);
+        //addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        //addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
+        addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
     }
 }

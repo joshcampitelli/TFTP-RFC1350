@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Packet;
+import com.tftp.core.BlockNumber;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
@@ -117,18 +118,29 @@ public class Client extends SRSocket {
                 System.arraycopy(response.getData(), 4, data, 0, length - 4);
                 fileTransfer.write(data);
 
-                DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
+                DatagramPacket ackPacket = new Packet(response).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
                 ackPacket.setPort(serverPort);
 
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
                 ackBlock++;
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
+                byte[] errorMsg = new byte[response.getLength() - 4];
+                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
+                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+                System.out.println("Terminating Client...");
+                break;
             } else {
                 String errorMsg = "Incorrect Packet Received";
                 send(packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()));    //Send error packet with error code 4.
+                System.out.println("Terminating Client...");
                 break;
             }
         } while (response.getData().length == Packet.DATA_SIZE);
+
+        if (fileTransfer.isComplete()) {
+            System.out.println("[IMPORTANT] Transfer complete!");
+        }
     }
 
     private void wrq() throws IOException {
@@ -139,7 +151,7 @@ public class Client extends SRSocket {
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
-            Packet packet = new Packet();
+            Packet packet = new Packet(response);
             byte[] data = fileTransfer.read();
 
             //Gets the Connection Port which it will be communicating
@@ -159,7 +171,7 @@ public class Client extends SRSocket {
 
             //Ensure the packet received from the server is of type ACK
             if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
+                DatagramPacket dataPacket = new Packet(response).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
 
@@ -171,9 +183,16 @@ public class Client extends SRSocket {
                     System.out.println("[IMPORTANT] Transfer complete!");
                     break;
                 }
-            } else {    //Received something other than an ACK Packet, return an error packet
+            } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
+                byte[] errorMsg = new byte[response.getLength() - 4];
+                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
+                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+                System.out.println("Terminating Client...");
+                break;
+            } else {    //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
                 String errorMsg = "Incorrect Packet Received";
                 send(packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()));    //Send error packet with error code 4.
+                System.out.println("Terminating Client...");
                 break;
             }
         }

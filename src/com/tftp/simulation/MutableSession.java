@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.Runnable;
 import com.tftp.core.Packet;
 import com.tftp.core.SRSocket;
+import java.util.Arrays;
 
 /**
  * MutableSession is similar to Connection for server sided requests. MutableSession allows the ErrorSimulator
@@ -19,6 +20,7 @@ import com.tftp.core.SRSocket;
  */
 public class MutableSession extends SRSocket implements Runnable {
 
+    private static int SERVER_PORT = 69;
     private ErrorSimulator simulator;
     private int source, dest;
 
@@ -29,16 +31,29 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    public MutableSession(ErrorSimulator simulator, DatagramPacket result, int source, int dest) throws IOException {
+    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException {
         super(String.format("Mutable Session (client tid: %d)", source));
         this.source = source;
-        this.dest = dest;
         this.simulator = simulator;
 
-        inform(result, "Sending Packet");
-        send(result);
+        DatagramPacket response = calibrate(request);
+        inform(response, "Sending Packet");
+        send(response);
     }
 
+    private DatagramPacket calibrate(DatagramPacket client) throws IOException {
+        DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
+        inform(server, "Sending Packet");
+        send(server);
+
+        DatagramPacket response = receive();
+        inform(response, "Received Packet");
+        this.dest = response.getPort();
+
+        System.out.printf("%d, %d, %d\n", this.source, this.dest, this.getLocalPort());
+
+        return simulator.produceFrom(response, client.getPort(), client.getAddress());
+    }
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -50,10 +65,12 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private DatagramPacket mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
         System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
-        if (modification.getErrorType() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
+        simulator.popModification();
+
+        if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
             return simulateInvalidTID(packet, destination, sendOnly);
-        } else if (modification.getErrorType() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
-            return simulateIllegalTftpOperation(packet, sendOnly);
+        } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
+            return simulateIllegalTftpOperation(packet, modification, sendOnly);
         }
 
         return packet;
@@ -76,15 +93,12 @@ public class MutableSession extends SRSocket implements Runnable {
         temp.inform(destination, "Sending Packet");
         temp.send(destination);
 
-        if (!sendOnly) {
-            DatagramPacket response = temp.receive();
-            temp.inform(response, "Received Packet");
-            temp.close();
+        DatagramPacket response = temp.receive();
+        temp.inform(response, "Received Packet");
+        temp.close();
 
-            return response;
-        } else {
-            return null;
-        }
+        System.out.println("[IMPORTANT] Fulfilled Invalid TID simulation. Killing Thread.");
+        return null;
     }
 
 
@@ -97,17 +111,45 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, boolean sendOnly) throws IOException {
-        packet.getData()[1] = 13;
-        inform(packet, "Sending Packet");
+    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, boolean sendOnly) throws IOException {
+        int errorType = modification.getErrorType();
+
+        if (errorType == Packet.INVALID_OPCODE) {
+
+            // set the opcode to something illegal
+            packet.getData()[1] = 13;
+        } else if (errorType == Packet.INVALID_PACKET_SIZE) {
+
+            // enlarge the array to 600 bytes to exceed the 516 byte limit
+            byte[] arr = enlarge(packet.getData(), 600);
+            packet.setData(arr);
+        } else if (errorType == Packet.INVALID_BLOCK_NUMBER) {
+
+            // decrement the block number to just corrupt it
+            packet.getData()[2]--;
+            packet.getData()[3]--;
+        }
+
+        inform(packet, "Sending Packet", true);
         send(packet);
 
         if (!sendOnly) {
             DatagramPacket response = receive();
+            System.out.println(new String(response.getData()));
             return response;
         } else {
             return null;
         }
+    }
+
+    private byte[] enlarge(byte[] array, int newLength) {
+        if (array.length > newLength) {
+            return array;
+        }
+
+        byte[] newArr = new byte[newLength];
+        System.arraycopy(array, 0, newArr, 0, array.length);
+        return newArr;
     }
 
     @Override
@@ -131,13 +173,22 @@ public class MutableSession extends SRSocket implements Runnable {
                     inform(response, "Received Packet");
                 }
 
+                if (response == null) {
+                    break;
+                }
+
                 modification = simulator.getModification(response);
                 if (modification != null) {
-                    mutate(response, modification, source, true);
+                    DatagramPacket pac = simulator.produceFrom(response, source, InetAddress.getLocalHost());
+                    response = mutate(pac, modification, source, true);
                 } else {
                     DatagramPacket result = simulator.produceFrom(response, source, client.getAddress());
                     inform(result, "Sending Packet");
                     send(result);
+                }
+
+                if (response == null) {
+                    break;
                 }
 
             }
