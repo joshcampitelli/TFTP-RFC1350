@@ -91,6 +91,8 @@ public class Connection extends SRSocket implements Runnable {
             return ackReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
             return dataReceived(receivedPacket); 
+        } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ERROR) {
+            return errorReceived(receivedPacket);
         } else {
             throw new InvalidPacketException("Illegal data buffer!!!");
         }
@@ -121,7 +123,7 @@ public class Connection extends SRSocket implements Runnable {
 
     //Ack Received gets the bytes from the FileTransfer Object then sends DATA1 Packet
     private DatagramPacket ackReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        if (clientTID != TID) {
+        if (clientTID != packet.getPort()) {
             return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Invalid TID".getBytes());
         } else {
             //Send Data from the file
@@ -138,7 +140,7 @@ public class Connection extends SRSocket implements Runnable {
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        if (clientTID != TID) {
+        if (clientTID != packet.getPort()) {
             return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Invalid TID".getBytes());
         } else {
             byte[] msg = extractData(packet.getData());
@@ -148,6 +150,10 @@ public class Connection extends SRSocket implements Runnable {
             ackBlock++;
             return temp;
         }
+    }
+
+    private DatagramPacket errorReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+        return packet;
     }
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
