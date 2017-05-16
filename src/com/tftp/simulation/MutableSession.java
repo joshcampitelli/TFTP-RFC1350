@@ -19,6 +19,7 @@ import com.tftp.core.SRSocket;
  */
 public class MutableSession extends SRSocket implements Runnable {
 
+    private static int SERVER_PORT = 69;
     private ErrorSimulator simulator;
     private int source, dest;
 
@@ -29,16 +30,27 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    public MutableSession(ErrorSimulator simulator, DatagramPacket result, int source, int dest) throws IOException {
+    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException {
         super(String.format("Mutable Session (client tid: %d)", source));
         this.source = source;
-        this.dest = dest;
         this.simulator = simulator;
 
-        inform(result, "Sending Packet");
-        send(result);
+        DatagramPacket response = calibrate(request);
+        inform(response, "Sending Packet");
+        send(response);
     }
 
+    private DatagramPacket calibrate(DatagramPacket client) throws IOException {
+        DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
+        inform(server, "Sending Packet");
+        send(server);
+
+        DatagramPacket response = receive();
+        inform(response, "Received Packet");
+        this.dest = response.getPort();
+
+        return simulator.produceFrom(response, client.getPort(), client.getAddress());
+    }
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -50,10 +62,10 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private DatagramPacket mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
         System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
-        if (modification.getErrorType() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
+        if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
             return simulateInvalidTID(packet, destination, sendOnly);
-        } else if (modification.getErrorType() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
-            return simulateIllegalTftpOperation(packet, sendOnly);
+        } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
+            return simulateIllegalTftpOperation(packet, modification, sendOnly);
         }
 
         return packet;
@@ -70,21 +82,26 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private DatagramPacket simulateInvalidTID(DatagramPacket packet, int dest, boolean sendOnly) throws IOException {
+        System.out.println("YAS");
         SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (dest id: %d)", dest));
 
         DatagramPacket destination = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
         temp.inform(destination, "Sending Packet");
         temp.send(destination);
 
-        if (!sendOnly) {
-            DatagramPacket response = temp.receive();
-            temp.inform(response, "Received Packet");
-            temp.close();
+        DatagramPacket response = temp.receive();
+        temp.inform(response, "Received Packet");
+        temp.close();
 
-            return response;
-        } else {
-            return null;
+        System.out.println("[IMPORTANT] Fulfilled Invalid TID simulation. Killing Thread.");
+
+        try {
+            Thread.currentThread().interrupt();
+        } catch (SecurityException ex) {
+            ex.printStackTrace();
         }
+
+        return null;
     }
 
 
@@ -97,8 +114,16 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, boolean sendOnly) throws IOException {
-        packet.getData()[1] = 13;
+    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, boolean sendOnly) throws IOException {
+        int errorType = modification.getErrorType();
+
+        if (errorType == Packet.INVALID_OPCODE) {
+            packet.getData()[1] = 13;
+        } else if (errorType == Packet.INVALID_PACKET_SIZE) {
+            byte[] arr = enlarge(packet.getData(), 1024);
+            packet.setData(arr);
+        }
+
         inform(packet, "Sending Packet");
         send(packet);
 
@@ -108,6 +133,16 @@ public class MutableSession extends SRSocket implements Runnable {
         } else {
             return null;
         }
+    }
+
+    private byte[] enlarge(byte[] array, int newLength) {
+        if (array.length > newLength) {
+            return array;
+        }
+
+        byte[] newArr = new byte[newLength];
+        System.arraycopy(array, 0, newArr, 0, array.length);
+        return newArr;
     }
 
     @Override
