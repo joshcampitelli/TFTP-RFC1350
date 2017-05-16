@@ -118,7 +118,7 @@ public class SRSocket extends DatagramSocket {
      * If any Client has received an Error Packet this means that either the data received from the Server
      * was corrupt or the Server was not expecting Packets from this Client.
      */
-    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID) { //Can also check block numbers as well.
+    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID, int blockNumber) { //Can also check block numbers as well.
         byte[] data = received.getData();
         String errorMsg = "";
         DatagramPacket errorPacket;
@@ -133,6 +133,9 @@ public class SRSocket extends DatagramSocket {
             errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
         } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
             errorMsg = "Undefined OpCode";
+            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) != blockNumber) {
+            errorMsg = "Incorrect Block Number";
             errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
         } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
             errorPacket = null;

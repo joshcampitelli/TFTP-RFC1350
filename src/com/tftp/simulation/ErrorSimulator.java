@@ -138,6 +138,6 @@ public class ErrorSimulator extends SRSocket {
     public void presetModifications() {
         //addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
         //addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
-        addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
+        addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
     }
 }
