@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Packet;
+import com.tftp.core.BlockNumber;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
@@ -117,7 +118,7 @@ public class Client extends SRSocket {
                 System.arraycopy(response.getData(), 4, data, 0, length - 4);
                 fileTransfer.write(data);
 
-                DatagramPacket ackPacket = new Packet(response).ACKPacket(getBlockNumber(ackBlock));
+                DatagramPacket ackPacket = new Packet(response).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
                 ackPacket.setPort(serverPort);
 
                 inform(ackPacket, "Sending ACK Packet", true);
@@ -150,7 +151,7 @@ public class Client extends SRSocket {
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
-            Packet packet = new Packet();
+            Packet packet = new Packet(response);
             byte[] data = fileTransfer.read();
 
             //Gets the Connection Port which it will be communicating
@@ -170,7 +171,7 @@ public class Client extends SRSocket {
 
             //Ensure the packet received from the server is of type ACK
             if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                DatagramPacket dataPacket = new Packet(response).DATAPacket(getBlockNumber(dataBlock), data);
+                DatagramPacket dataPacket = new Packet(response).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
 
