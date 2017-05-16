@@ -79,8 +79,16 @@ public class Connection extends SRSocket implements Runnable {
     }
 
     //Handles the different types of packets sent to the server, returns the returnPacket to go back to client (ACK/DATA)
-    // TODO: damn is did'nt know this was a keyword, this method is very messy...
     private DatagramPacket handlePacket(DatagramPacket receivedPacket) throws UnknownIOModeException, IOException, InvalidPacketException {
+
+        //Need to implement error checking here... build the error packets then return errorReceived(errorPacket)
+        //which will handle the server's response
+        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, TID);
+        if (errorPacket != null && errorPacket.getData()[3] == 4) {
+
+        } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
+            send(errorPacket);
+        }
 
         Packet packet = new Packet();
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
@@ -90,7 +98,7 @@ public class Connection extends SRSocket implements Runnable {
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ACK) {
             return ackReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
-            return dataReceived(receivedPacket); 
+            return dataReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ERROR) {
             return errorReceived(receivedPacket);
         } else {
@@ -123,19 +131,16 @@ public class Connection extends SRSocket implements Runnable {
 
     //Ack Received gets the bytes from the FileTransfer Object then sends DATA1 Packet
     private DatagramPacket ackReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        if (clientTID != packet.getPort()) {
-            return new Packet().ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes());
-        } else {
-            //Send Data from the file
-            byte[] data = fileTransfer.read();
+        //Send Data from the file
+        byte[] data = fileTransfer.read();
 
-            DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
 
-            // shrink data array to amount of read bytes
-            temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
-            dataBlock++;
-            return temp;
-        }
+        // shrink data array to amount of read bytes
+        temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
+        dataBlock++;
+        return temp;
+
     }
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
@@ -145,7 +150,7 @@ public class Connection extends SRSocket implements Runnable {
         } else {
             byte[] msg = extractData(packet.getData());
             fileTransfer.write(msg);
-            
+
             DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
             ackBlock++;
             return temp;

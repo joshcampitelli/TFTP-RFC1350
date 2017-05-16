@@ -108,4 +108,47 @@ public class SRSocket extends DatagramSocket {
 
         return data;
     }
+
+    /**
+     *
+     * @param received DatagramPacket the Client received
+     * @param expectedTID The TID that the packet is expected to come from
+     * @return DatagramPacket
+     *
+     * parseUnknownPacket parses the packet given to it and determines which type of error it is.
+     *
+     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, AckPacket Error.
+     *                      Client Shall Terminate.
+     *
+     * Error Packet Type 5: Incorrect TID, meaning the Connection the Client sent a Packet to was not
+     *                      expecting a Packet from and returned an Error Packet Type 5 to said Client.
+     *                      In such case the Client shall terminate.
+     *
+     * If any Client has received an Error Packet this means that either the data received from the Server
+     * was corrupt or the Server was not expecting Packets from this Client.
+     */
+    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID) { //Can also check block numbers as well.
+        byte[] data = received.getData();
+        String errorMsg = "";
+        DatagramPacket errorPacket;
+        Packet packet = new Packet(received);
+
+        if (received.getPort() != expectedTID) { //Incorrect TID
+            errorMsg = "Incorrect TID";
+            errorPacket = packet.ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+        } else if (data.length > 516) {             //Error type 4: corrupt data
+            errorMsg = "Data greater than 512";
+            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+        } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
+            errorMsg = "Undefined OpCode";
+            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+        } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
+            errorPacket = null;
+        }
+        if (errorPacket != null)
+            System.out.println("Error Packet Received: Error Code: 0" + errorPacket.getData()[3] + ", Error Message: " + errorMsg);
+
+        return errorPacket;
+    }
+
 }
