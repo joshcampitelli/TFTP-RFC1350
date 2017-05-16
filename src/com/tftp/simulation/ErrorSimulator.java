@@ -93,6 +93,14 @@ public class ErrorSimulator extends SRSocket {
         }
     }
 
+    public void popModification() {
+        synchronized (modifications) {
+            if (!modifications.isEmpty()) {
+                modifications.remove(0);
+            }
+        }
+    }
+
 
     /**
      * Runs the simulation cycle for the ErrorSimulator. Once a packet is received, it is processed and a
@@ -128,8 +136,8 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        addModification(2, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
-        addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
-        addModification(5, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
+        //addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        //addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
+        addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
     }
 }

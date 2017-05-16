@@ -1,5 +1,6 @@
 package com.tftp.core;
 
+import com.tftp.core.BlockNumber;
 import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
@@ -112,7 +113,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
         dataBlock++;
 
         return temp;
@@ -122,7 +123,7 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
         fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.WRITE);
-        DatagramPacket temp =  new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
+        DatagramPacket temp =  new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
         ackBlock++;
 
         return temp;
@@ -133,7 +134,7 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
 
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
@@ -147,7 +148,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
 
-        DatagramPacket temp = new Packet(packet).ACKPacket(getBlockNumber(ackBlock));
+        DatagramPacket temp = new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
         ackBlock++;
         return temp;
     }
@@ -170,37 +171,33 @@ public class Connection extends SRSocket implements Runnable {
         }
     }
 
-    private boolean process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
+    private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
         DatagramPacket packet = handlePacket(request);
 
-        if (packet == null)
-            return false;
-
-        inform(packet, "Sending Packet");
-
-        send(packet);
+        if (packet == null){
+            setActive(false);
+        } else {
+            inform(packet, "Sending Packet");
+            send(packet);
+        }
 
         // transfer complete
         if (fileTransfer != null && fileTransfer.isComplete()) {
             setActive(false);
         }
-        return true;
     }
 
     @Override
     public void run() {
-        boolean var;
         try {
             while (true) {
-                var = process(request);
-                if (!var)
-                    throw new InvalidPacketException("");
+                process(request);
 
                 if (!isActive())
                     break;
 
                 request = receive();
-                inform(request, "Received Packet");
+                inform(request, "Received Packet", true);
             }
 
             System.out.printf("%s completed successfully and is closing...\n", getName());

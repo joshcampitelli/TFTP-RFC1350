@@ -2,6 +2,7 @@ package com.tftp.simulation;
 
 import java.util.ArrayList;
 import java.net.DatagramPacket;
+import com.tftp.core.BlockNumber;
 import com.tftp.core.Packet;
 import com.tftp.core.Packet.PacketTypes;
 
@@ -77,26 +78,13 @@ public class PacketModification {
      */
     public boolean isMatchingPacket(DatagramPacket target) {
         Packet packet = new Packet();
-        int blocknum = getBlockUnsigned(target);
+        int blocknum = BlockNumber.getBlockNumber(target.getData());
 
         return packet.checkPacketType(target) == packetType && blocknum == blockNumber;
     }
 
-    /**
-     * Converts the two byte block number into an unsigned integer.
-     *
-     * @return Unsigned block number
-     */
-    private int getBlockUnsigned(DatagramPacket target) {
-        int blocknum = 0;
-        blocknum += Byte.toUnsignedInt(target.getData()[3]);
-        blocknum += Byte.toUnsignedInt(target.getData()[2]) << 8;
-
-        return blocknum;
-    }
-
     @Override
     public String toString() {
-        return String.format("Modification for packet blocknumber #%d and packet type: %s", blockNumber, packetType);
+        return String.format("Modification for packet blocknumber #%d, packet type: %s", blockNumber, packetType);
     }
 }

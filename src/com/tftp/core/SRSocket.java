@@ -42,7 +42,7 @@ public class SRSocket extends DatagramSocket {
     }
 
     public DatagramPacket receive() throws IOException {
-        byte[] data = new byte[516];
+        byte[] data = new byte[1024];
         DatagramPacket packet = new DatagramPacket(data, data.length);
         this.receive(packet);
 
@@ -98,16 +98,6 @@ public class SRSocket extends DatagramSocket {
         }
 
         return arr1;
-    }
-
-    //converts an integer into a 2 byte array
-    protected byte[] getBlockNumber(int input) {
-        byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
-
-        data[0] = (byte)((input >> 8) & 0xFF);
-        data[1] = (byte)(input & 0xFF);
-
-        return data;
     }
 
     /**

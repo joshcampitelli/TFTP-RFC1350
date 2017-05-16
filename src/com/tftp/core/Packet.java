@@ -28,6 +28,7 @@ public class Packet {
     public static final byte NO_SPECIAL_ERROR = 00;
     public static final byte INVALID_OPCODE = 01;
     public static final byte INVALID_PACKET_SIZE = 02;
+    public static final byte INVALID_BLOCK_NUMBER = 03;
 
     public Packet() {
     }
