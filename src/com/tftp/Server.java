@@ -3,7 +3,7 @@ package com.tftp;
 import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
-import java.util.ArrayList;
+import java.util.Scanner;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Connection;
@@ -23,14 +23,22 @@ import java.net.SocketException;
  */
 public class Server extends SRSocket {
 
-    private QuitListener quitListener;
     private int threadNumber;
     public static int RECEIVE_PORT = 69;
+	public static boolean verbose;
 
     public Server() throws IOException {
         super("Server, Socket 'R'", RECEIVE_PORT);
     }
 
+
+
+    public String getInput(String text) {
+    	 Scanner scanner = new Scanner(System.in);
+    	 System.out.printf(text);
+
+    	 return scanner.nextLine();
+      }
 
     /**
      * Attempts to establish a connection for the received packet. If the packet has been determined to be invalid,
@@ -55,6 +63,11 @@ public class Server extends SRSocket {
     public void launch() throws IOException, InvalidPacketException {
         System.out.printf("Server has successfully launched.\n");
 
+        String verbosity = this.getInput("The Server is set to quiet. Would you like to set it to verbose? (y/N) ");
+        if (verbosity.toLowerCase().equals("y")) {
+            verbose = true;
+         }
+
         new QuitListener(this).start();
         System.out.printf("If you would like to shutdown the server, type \"quit\".\n\n");
 
@@ -75,9 +88,14 @@ public class Server extends SRSocket {
 
     public static void main(String[] args) {
         Server server = null;
+
         try {
+
             server = new Server();
             server.launch();
+
+
+
         } catch (SocketException e) {
             System.out.printf("Shutdown successful: no more incoming connections to be serviced...\n");
         } catch (IOException e) {

@@ -83,7 +83,7 @@ public class Connection extends SRSocket implements Runnable {
 
         //Need to implement error checking here... build the error packets then return errorReceived(errorPacket)
         //which will handle the server's response
-        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, TID);
+        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID);
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
 
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
@@ -91,6 +91,7 @@ public class Connection extends SRSocket implements Runnable {
         }
 
         Packet packet = new Packet();
+        
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
             return rrqReceived(receivedPacket);
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.WRQ) {
@@ -163,7 +164,7 @@ public class Connection extends SRSocket implements Runnable {
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
         DatagramPacket packet = handlePacket(request);
-        inform(packet, "Sending Packet");
+        inform(packet, "Sending Packet", true);
         send(packet);
 
         // transfer complete

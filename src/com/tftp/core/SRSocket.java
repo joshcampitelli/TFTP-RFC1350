@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.io.IOException;
 
 import com.tftp.Client;
+import com.tftp.Server;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
@@ -60,7 +61,7 @@ public class SRSocket extends DatagramSocket {
     }
 
     public void inform(DatagramPacket packet, String event, boolean extra) {
-        if (!Client.verbose) {
+        if (!Client.verbose && !Server.verbose) {
             return;
         }
 

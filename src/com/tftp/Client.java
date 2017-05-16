@@ -37,7 +37,7 @@ public class Client extends SRSocket {
 
     public Client() throws IOException {
         super("Client");
-        this.TID = getPort();
+        this.TID = getLocalPort();
     }
 
     /**
