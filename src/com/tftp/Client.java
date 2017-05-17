@@ -101,15 +101,9 @@ public class Client extends SRSocket {
             if (ackBlock == 0)
                 connectionTID = response.getPort();
 
-            int blockNumber = -1;
-            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                blockNumber = ackBlock;
-            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
-                blockNumber = dataBlock;
-            }
-
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
+                inform(errorPacket, "Sending Packet");
                 send(errorPacket);
                 System.out.println("Terminating Client...");
                 break;
@@ -119,6 +113,8 @@ public class Client extends SRSocket {
             }
 
             if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
+                ackBlock++;
+
                 // unpack the data portion and write it to the file
                 int length = response.getData().length;
                 byte[] data = new byte[length - 4];
@@ -130,7 +126,6 @@ public class Client extends SRSocket {
 
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
-                ackBlock++;
             } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
                 byte[] errorMsg = new byte[response.getLength() - 4];
                 System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
@@ -165,14 +160,7 @@ public class Client extends SRSocket {
             if (dataBlock == 1)
                 connectionTID = response.getPort();
 
-            int blockNumber = -1;
-            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                blockNumber = ackBlock;
-            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
-                blockNumber = dataBlock;
-            }
-
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
                 send(errorPacket);
                 System.out.println("Terminating Client...");

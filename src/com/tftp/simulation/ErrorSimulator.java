@@ -93,10 +93,10 @@ public class ErrorSimulator extends SRSocket {
         }
     }
 
-    public void popModification() {
+    public void popModification(PacketModification modification) {
         synchronized (modifications) {
             if (!modifications.isEmpty()) {
-                modifications.remove(0);
+                modifications.remove(modification);
             }
         }
     }
@@ -136,8 +136,11 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        //addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
-        //addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
+        addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
         addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
+        addModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
+        addModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        addModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
+        addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
     }
 }
