@@ -50,8 +50,6 @@ public class MutableSession extends SRSocket implements Runnable {
         inform(response, "Received Packet");
         this.dest = response.getPort();
 
-        System.out.printf("%d, %d, %d\n", this.source, this.dest, this.getLocalPort());
-
         return simulator.produceFrom(response, client.getPort(), client.getAddress());
     }
 
@@ -65,12 +63,12 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private DatagramPacket mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
         System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
-        simulator.popModification();
+        simulator.popModification(modification);
 
         if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
             return simulateInvalidTID(packet, destination, sendOnly);
         } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
-            return simulateIllegalTftpOperation(packet, modification, sendOnly);
+            return simulateIllegalTftpOperation(packet, modification, destination, sendOnly);
         }
 
         return packet;
@@ -111,7 +109,7 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, boolean sendOnly) throws IOException {
+    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest, boolean sendOnly) throws IOException {
         int errorType = modification.getErrorType();
 
         if (errorType == Packet.INVALID_OPCODE) {
@@ -130,12 +128,12 @@ public class MutableSession extends SRSocket implements Runnable {
             packet.getData()[3]--;
         }
 
+        packet = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
         inform(packet, "Sending Packet", true);
         send(packet);
 
         if (!sendOnly) {
             DatagramPacket response = receive();
-            System.out.println(new String(response.getData()));
             return response;
         } else {
             return null;
@@ -186,11 +184,6 @@ public class MutableSession extends SRSocket implements Runnable {
                     inform(result, "Sending Packet");
                     send(result);
                 }
-
-                if (response == null) {
-                    break;
-                }
-
             }
         } catch (IOException e) {
             e.printStackTrace();
