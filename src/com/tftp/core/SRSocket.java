@@ -9,6 +9,8 @@ import java.io.IOException;
 
 import com.tftp.Client;
 import com.tftp.Server;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.BlockNumber;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting

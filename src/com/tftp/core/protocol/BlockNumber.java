@@ -1,15 +1,15 @@
-package com.tftp.core;
+package com.tftp.core.protocol;
 
 
 /**
- * PacketModification provides the template for selecting certain packets and deciding how to corrupt them
- * to produce certain errors.
+ * BlockNumber encapsulates the logic between encoding blocknumbers as two's complement (i.e. default in java)
+ * and reading them back correctly as unsigned numbers.
  *
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
  * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
- * @since May the 14th, 2017.
+ * @since May the 16th, 2017.
  */
 public class BlockNumber {
 

@@ -7,8 +7,8 @@ import java.net.InetAddress;
 import java.io.IOException;
 
 import com.tftp.core.SRSocket;
-import com.tftp.core.Packet;
-import com.tftp.core.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.BlockNumber;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
