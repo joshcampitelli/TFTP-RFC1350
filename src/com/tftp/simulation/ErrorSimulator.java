@@ -2,7 +2,7 @@ package com.tftp.simulation;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import java.io.IOException;
 import com.tftp.core.SRSocket;
@@ -22,8 +22,7 @@ import com.tftp.core.Packet.PacketTypes;
 public class ErrorSimulator extends SRSocket {
 
     private static int RECEIVE_PORT = 23;
-    private ArrayList<PacketModification> modifications;
-    private SRSocket serverSocket;
+    private final LinkedList<PacketModification> modifications;
 
     /**
      * Constructs the ErrorSimulator by initializing the main receive socket (listening on port 23) and the
@@ -33,8 +32,7 @@ public class ErrorSimulator extends SRSocket {
      */
     public ErrorSimulator() throws IOException {
         super("ErrorSimulator, Main Socket 'R'", RECEIVE_PORT);
-        this.modifications = new ArrayList<>();
-        this.serverSocket = new SRSocket("ErrorSimulator, S/R Socket");
+        this.modifications = new LinkedList<>();
     }
 
 
@@ -48,28 +46,6 @@ public class ErrorSimulator extends SRSocket {
     }
 
 
-    /**
-     * Acquires the modification for the packet provided.
-     *
-     * @return the PacketModification object corresponding to the packet.
-     */
-    public PacketModification getModification(DatagramPacket packet) {
-        PacketModification rule = null;
-        synchronized (modifications) {
-            for (PacketModification modification : modifications) {
-
-                // a PacketModification rule exists for this specific packet
-                if (modification.isMatchingPacket(packet)) {
-
-                    // exiting synchronized block as critical section is over
-                    rule = modification;
-                    break;
-                }
-            }
-        }
-
-        return rule;
-    }
 
 
     /**
@@ -82,7 +58,7 @@ public class ErrorSimulator extends SRSocket {
      * @param type The type of packet it must be to be considered for modification
      * @param errorType The type of error packet to produce from the modification
      */
-    public void addModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
+    public void queueModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
         PacketModification modification = new PacketModification();
         modification.setPacketParameters(blocknumber, type);
         modification.setErrorId(errorId);
@@ -93,11 +69,20 @@ public class ErrorSimulator extends SRSocket {
         }
     }
 
-    public void popModification(PacketModification modification) {
+
+    public boolean isTargetPacket(DatagramPacket packet) {
+        synchronized (modifications) {
+            return modifications.peek().isMatchingPacket(packet);
+        }
+    }
+
+    public PacketModification dequeue() {
         synchronized (modifications) {
             if (!modifications.isEmpty()) {
-                modifications.remove(modification);
+                return modifications.remove();
             }
+
+            return null;
         }
     }
 
@@ -136,11 +121,11 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        addModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
-        addModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
-        addModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
-        addModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
-        addModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
-        addModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        queueModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
+        queueModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
+        queueModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
+        queueModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        queueModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
+        queueModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
     }
 }
