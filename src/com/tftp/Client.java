@@ -75,14 +75,14 @@ public class Client extends SRSocket {
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.WRITE);
+            fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
 
-            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
+            fileTransfer = new FileTransfer(new String(filename), FileTransfer.READ);
             wrq();
         }
     }
@@ -203,6 +203,7 @@ public class Client extends SRSocket {
     public static void main(String[] args) {
         try {
             Client client = new Client();
+            FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
 
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
