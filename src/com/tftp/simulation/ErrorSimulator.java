@@ -72,7 +72,7 @@ public class ErrorSimulator extends SRSocket {
 
     public boolean isTargetPacket(DatagramPacket packet) {
         synchronized (modifications) {
-            return modifications.peek().isMatchingPacket(packet);
+            return !modifications.isEmpty() && modifications.peek().isMatchingPacket(packet);
         }
     }
 
