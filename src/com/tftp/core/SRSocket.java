@@ -1,8 +1,9 @@
 package com.tftp.core;
 
-import java.net.DatagramSocket;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.io.IOException;
 
@@ -46,11 +47,36 @@ public class SRSocket extends DatagramSocket {
         DatagramPacket packet = new DatagramPacket(data, data.length);
         this.receive(packet);
 
+        // disable timeout if exists
+        setSoTimeout(0);
+
         // reduce the buffer to the size of the data received, if possible
         data = shrink(packet.getData(), packet.getLength());
         packet.setData(data);
 
         return packet;
+    }
+
+    /**
+     * Receive a packet but with a set timeout.
+     * PLEASE NOTE: this method still *throws* the timeout exception, even though a try-catch block is in place.
+     * The reason the try-catch block exists is to disable the timeout before throwing it.
+     *
+     * @param timeout the time (in milliseconds) to wait before timing out
+     *
+     * @return the packet
+     * @throws IOException importantly SocketTimeoutException
+     */
+    public DatagramPacket receive(int timeout) throws IOException {
+        setSoTimeout(timeout);
+
+        try {
+            return receive();
+        } catch (SocketTimeoutException ex) {
+
+            setSoTimeout(0);
+            throw ex;
+        }
     }
 
     public void send(DatagramPacket packet) throws IOException {
