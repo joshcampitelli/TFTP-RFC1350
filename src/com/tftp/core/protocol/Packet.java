@@ -1,4 +1,4 @@
-package com.tftp.core;
+package com.tftp.core.protocol;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;

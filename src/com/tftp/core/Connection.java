@@ -1,6 +1,7 @@
 package com.tftp.core;
 
-import com.tftp.core.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.BlockNumber;
 import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;

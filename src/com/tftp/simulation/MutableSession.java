@@ -7,7 +7,7 @@ import java.net.InetAddress;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
-import com.tftp.core.Packet;
+import com.tftp.core.protocol.Packet;
 import com.tftp.core.SRSocket;
 
 /**
@@ -43,6 +43,16 @@ public class MutableSession extends SRSocket implements Runnable {
         send(response);
     }
 
+
+    /**
+     * Calibrates the newly birthed MutableSession by acquiring the TID of the destination.
+     *
+     * @param client The packet that has been received by the ErrorSimulator
+     *
+     * @return The packet received from the unknown party.
+     *
+     * @throws IOException
+     */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException {
         DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
         inform(server, "Sending Packet");
@@ -54,6 +64,7 @@ public class MutableSession extends SRSocket implements Runnable {
 
         return simulator.produceFrom(response, client.getPort(), client.getAddress());
     }
+
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -132,6 +143,16 @@ public class MutableSession extends SRSocket implements Runnable {
         send(packet);
     }
 
+
+    /**
+     * Increases the capacity of the array provided to a specified new length while maintaing its contents.
+     *
+     * @param array the array in question
+     * @param newLength The new capacity of the array
+     *
+     * @return  the original array if the new length has been found to be less than the current array length,
+     *          otherwise the newly constructed array.
+     */
     private byte[] enlarge(byte[] array, int newLength) {
         if (array.length > newLength) {
             return array;

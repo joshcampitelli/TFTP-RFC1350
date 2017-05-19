@@ -2,9 +2,9 @@ package com.tftp.simulation;
 
 import java.util.ArrayList;
 import java.net.DatagramPacket;
-import com.tftp.core.BlockNumber;
-import com.tftp.core.Packet;
-import com.tftp.core.Packet.PacketTypes;
+import com.tftp.core.protocol.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.Packet.PacketTypes;
 
 /**
  * PacketModification provides the template for selecting certain packets and deciding how to corrupt them

@@ -6,12 +6,16 @@ import java.util.LinkedList;
 
 import java.io.IOException;
 import com.tftp.core.SRSocket;
-import com.tftp.core.Packet;
-import com.tftp.core.Packet.PacketTypes;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.Packet.PacketTypes;
 
 /**
  * ErrorSimulator aids in testing the rigidty and robustness of the transfer protocol implemented between
  * the client and server by intentionally tampering with packets to encode an illegal operation.
+ *
+ * ErrorSimulator spawns multiple MutableSessions, that each individually may manipulate the modifications queue.
+ * Hence, many of the ErrorSimulator classes have mutual exclusion (i.e. external synchronization) to avoid
+ * any faults.
  *
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
@@ -70,12 +74,25 @@ public class ErrorSimulator extends SRSocket {
     }
 
 
+    /**
+     * Checks if the provided packet matches the PacketModification template at the front of the queue.
+     *
+     * @param packet DatagramPacket received by the MutableSession
+     *
+     * @return if the packet matches the PacketModification template
+     */
     public boolean isTargetPacket(DatagramPacket packet) {
         synchronized (modifications) {
             return !modifications.isEmpty() && modifications.peek().isMatchingPacket(packet);
         }
     }
 
+
+    /**
+     * Attempts to dequeue the front of the queue.
+     *
+     * @return The PacketModification at the front of the queue, if exists.
+     */
     public PacketModification dequeue() {
         synchronized (modifications) {
             if (!modifications.isEmpty()) {
