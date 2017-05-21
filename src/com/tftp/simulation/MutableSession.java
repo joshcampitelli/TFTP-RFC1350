@@ -1,12 +1,14 @@
 package com.tftp.simulation;
 
+import java.lang.Runnable;
+import java.lang.Math;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.io.IOException;
-import java.lang.Runnable;
-import com.tftp.core.Packet;
+import java.net.SocketTimeoutException;
+
+import com.tftp.core.protocol.Packet;
 import com.tftp.core.SRSocket;
-import java.util.Arrays;
 
 /**
  * MutableSession is similar to Connection for server sided requests. MutableSession allows the ErrorSimulator
@@ -41,6 +43,16 @@ public class MutableSession extends SRSocket implements Runnable {
         send(response);
     }
 
+
+    /**
+     * Calibrates the newly birthed MutableSession by acquiring the TID of the destination.
+     *
+     * @param client The packet that has been received by the ErrorSimulator
+     *
+     * @return The packet received from the unknown party.
+     *
+     * @throws IOException
+     */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException {
         DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
         inform(server, "Sending Packet");
@@ -50,10 +62,9 @@ public class MutableSession extends SRSocket implements Runnable {
         inform(response, "Received Packet");
         this.dest = response.getPort();
 
-        System.out.printf("%d, %d, %d\n", this.source, this.dest, this.getLocalPort());
-
         return simulator.produceFrom(response, client.getPort(), client.getAddress());
     }
+
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -63,30 +74,26 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
+    private void mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
         System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
-        simulator.popModification();
 
         if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
-            return simulateInvalidTID(packet, destination, sendOnly);
+            simulateInvalidTID(packet, destination);
         } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
-            return simulateIllegalTftpOperation(packet, modification, sendOnly);
+            simulateIllegalTftpOperation(packet, modification, destination, sendOnly);
         }
-
-        return packet;
     }
 
 
     /**
      * Simulates an Invalid Transfer Id (ERROR type 5) case by creating a new socket and fulfilling the cycle through it.
      *
-     * @param sendOnly true - only performs the send part of the cycle, otherwise performs the full send/receive
      *
      * @return the response from the mutation cycle, or null if send-only
      *
      * @throws IOException
      */
-    private DatagramPacket simulateInvalidTID(DatagramPacket packet, int dest, boolean sendOnly) throws IOException {
+    private void simulateInvalidTID(DatagramPacket packet, int dest) throws IOException {
         SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (dest id: %d)", dest));
 
         DatagramPacket destination = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
@@ -96,9 +103,6 @@ public class MutableSession extends SRSocket implements Runnable {
         DatagramPacket response = temp.receive();
         temp.inform(response, "Received Packet");
         temp.close();
-
-        System.out.println("[IMPORTANT] Fulfilled Invalid TID simulation. Killing Thread.");
-        return null;
     }
 
 
@@ -111,37 +115,44 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, boolean sendOnly) throws IOException {
-        int errorType = modification.getErrorType();
+    private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest, boolean sendOnly) throws IOException {
+        switch (modification.getErrorType()) {
+            case Packet.INVALID_OPCODE:
 
-        if (errorType == Packet.INVALID_OPCODE) {
+                // corrupt the opcode, random number above the last legal opcode (i.e. >5)
+                packet.getData()[1] = (byte) (Math.random() * 100 + 6);
+                break;
 
-            // set the opcode to something illegal
-            packet.getData()[1] = 13;
-        } else if (errorType == Packet.INVALID_PACKET_SIZE) {
+            case Packet.INVALID_PACKET_SIZE:
 
-            // enlarge the array to 600 bytes to exceed the 516 byte limit
-            byte[] arr = enlarge(packet.getData(), 600);
-            packet.setData(arr);
-        } else if (errorType == Packet.INVALID_BLOCK_NUMBER) {
+                // change the array size to more than 512
+                byte[] arr = enlarge(packet.getData(), (int) (Math.random() * 512 + 512));
+                packet.setData(arr);
+                break;
 
-            // decrement the block number to just corrupt it
-            packet.getData()[2]--;
-            packet.getData()[3]--;
+            case Packet.INVALID_BLOCK_NUMBER:
+
+                // corrupt the block number, choose a random byte
+                packet.getData()[2] = (byte) (Math.random() * 256);
+                packet.getData()[3] = (byte) (Math.random() * 256);
+                break;
         }
 
+        packet = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
         inform(packet, "Sending Packet", true);
         send(packet);
-
-        if (!sendOnly) {
-            DatagramPacket response = receive();
-            System.out.println(new String(response.getData()));
-            return response;
-        } else {
-            return null;
-        }
     }
 
+
+    /**
+     * Increases the capacity of the array provided to a specified new length while maintaing its contents.
+     *
+     * @param array the array in question
+     * @param newLength The new capacity of the array
+     *
+     * @return  the original array if the new length has been found to be less than the current array length,
+     *          otherwise the newly constructed array.
+     */
     private byte[] enlarge(byte[] array, int newLength) {
         if (array.length > newLength) {
             return array;
@@ -155,43 +166,24 @@ public class MutableSession extends SRSocket implements Runnable {
     @Override
     public void run() {
         try {
+            int dest = this.dest;
+
             while (true) {
-                DatagramPacket client = receive();
-                inform(client, "Received Packet");
+                DatagramPacket packet = receive(1000);
+                inform(packet, "Received Packet");
 
-                PacketModification modification = simulator.getModification(client);
-                DatagramPacket response = null;
-
-                if (modification != null) {
-                    response = mutate(client, modification, dest, false);
+                if (simulator.isTargetPacket(packet)) {
+                    mutate(packet, simulator.dequeue(), dest, false);
                 } else {
-                    DatagramPacket server = simulator.produceFrom(client, dest, InetAddress.getLocalHost());
-                    inform(server, "Sending Packet");
-                    send(server);
-
-                    response = receive();
-                    inform(response, "Received Packet");
+                    DatagramPacket recipient = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
+                    inform(recipient, "Sending Packet");
+                    send(recipient);
                 }
 
-                if (response == null) {
-                    break;
-                }
-
-                modification = simulator.getModification(response);
-                if (modification != null) {
-                    DatagramPacket pac = simulator.produceFrom(response, source, InetAddress.getLocalHost());
-                    response = mutate(pac, modification, source, true);
-                } else {
-                    DatagramPacket result = simulator.produceFrom(response, source, client.getAddress());
-                    inform(result, "Sending Packet");
-                    send(result);
-                }
-
-                if (response == null) {
-                    break;
-                }
-
+                dest = (dest == this.dest) ? this.source : this.dest;
             }
+        } catch (SocketTimeoutException e) {
+            System.out.println("[IMPORTANT] No packet received in 1000 ms. Terminating!");
         } catch (IOException e) {
             e.printStackTrace();
         }

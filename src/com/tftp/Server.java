@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Connection;
+import com.tftp.io.FileTransfer;
 import com.tftp.workers.QuitListener;
 import com.tftp.exceptions.InvalidPacketException;
 import java.net.SocketException;
@@ -38,7 +39,7 @@ public class Server extends SRSocket {
     	 System.out.printf(text);
 
     	 return scanner.nextLine();
-      }
+    }
 
     /**
      * Attempts to establish a connection for the received packet. If the packet has been determined to be invalid,
@@ -62,11 +63,6 @@ public class Server extends SRSocket {
      */
     public void launch() throws IOException, InvalidPacketException {
         System.out.printf("Server has successfully launched.\n");
-
-        String verbosity = this.getInput("The Server is set to quiet. Would you like to set it to verbose? (y/N) ");
-        if (verbosity.toLowerCase().equals("y")) {
-            verbose = true;
-         }
 
         new QuitListener(this).start();
         System.out.printf("If you would like to shutdown the server, type \"quit\".\n\n");
@@ -92,10 +88,14 @@ public class Server extends SRSocket {
         try {
 
             server = new Server();
+            FileTransfer.setup(FileTransfer.SERVER_DIRECTORY);
+
+            String verbosity = server.getInput("The Server is set to quiet. Would you like to set it to verbose? (y/N) ");
+            if (verbosity.toLowerCase().equals("y")) {
+                verbose = true;
+            }
+
             server.launch();
-
-
-
         } catch (SocketException e) {
             System.out.printf("Shutdown successful: no more incoming connections to be serviced...\n");
         } catch (IOException e) {

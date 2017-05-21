@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Scanner;
 
 import com.tftp.exceptions.UnknownIOModeException;
 
@@ -25,9 +26,9 @@ public class FileTransfer {
     public static int READ = 1;
     public static int WRITE = 2;
     public static int BLOCK_SIZE = 512; // 512 bytes
-    public static String SERVER_DIRECTORY = "./data/server/";
-    public static String CLIENT_DIRECTORY = "./data/client/";
-
+    public static String SERVER_DIRECTORY = "\\data\\server\\";
+    public static String CLIENT_DIRECTORY = "\\data\\client\\";
+    public static String parentDirectory;
     private File file;
     private AutoCloseable stream;
     private int lastBlockSize;
@@ -37,10 +38,61 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    public FileTransfer(String filepath, int mode) throws FileNotFoundException, UnknownIOModeException {
-        this.file = new File(filepath);
+    public FileTransfer(String file, int mode) throws FileNotFoundException, UnknownIOModeException {
+        this.file = new File(parentDirectory + "\\" + file);
         initialize(mode);
     }
+
+
+    /**
+     * Sets the parent directory of FileTransfer.
+     *
+     * @param path the path provided, may be absolute or relative.
+     * @param relative specifies if the path is relative to the current parent directory or not.
+     */
+    public static void setStartingDirectory(String path, boolean relative) {
+        if (relative) {
+            parentDirectory = new File(new File("").getAbsolutePath() + path).getAbsolutePath();
+        } else {
+            parentDirectory = new File(path).getAbsolutePath();
+        }
+    }
+
+
+    /**
+     * Sets up the FileTransfer for this process to be working under a specific directory.
+     * Prompts and informs the operator if they wish to change the directory.
+     *
+     * @param directory the default directory to be setup before informing the operator
+     */
+    public static void setup(String directory) {
+        setStartingDirectory(directory, true);
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("The starting directory for transfering files:");
+        System.out.printf("\t%s\n\n", parentDirectory);
+        System.out.printf("If you wish to keep it, hit enter. Otherwise, Please specify the absolute starting directory path: ");
+
+        String parentDirectory = scanner.nextLine();
+        if (!parentDirectory.isEmpty()) {
+            setStartingDirectory(parentDirectory, false);
+        }
+    }
+
+
+    /**
+     * Checks if the specified file is already existing.
+     *
+     * @param file the relative path to the file
+     *
+     * @return  true    if the file exists
+     *          false   otherwise
+     */
+    public boolean isFileExisting(String file) {
+        File f = new File(parentDirectory + "\\" + file);
+        return f.exists() && !f.isDirectory();
+    }
+
 
     /**
      * Reads up to BLOCK_SIZE worth of data from the FileInputStream.

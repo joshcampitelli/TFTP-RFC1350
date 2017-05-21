@@ -1,6 +1,7 @@
 package com.tftp.core;
 
-import com.tftp.core.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.BlockNumber;
 import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
@@ -84,13 +85,14 @@ public class Connection extends SRSocket implements Runnable {
         int blockNumber = -1;
         Packet packet = new Packet(receivedPacket);
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.ACK) {
-            blockNumber = ackBlock;
+            blockNumber = dataBlock - 1;
         } else if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
-            blockNumber = dataBlock;
+            blockNumber = ackBlock;
         }
 
         DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
+            setActive(false);
             return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
             return new Packet(receivedPacket).ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes(), receivedPacket.getAddress(), receivedPacket.getPort());
@@ -114,7 +116,7 @@ public class Connection extends SRSocket implements Runnable {
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
     private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.READ);
+        fileTransfer = new FileTransfer(filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
@@ -127,7 +129,7 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-        fileTransfer = new FileTransfer(FileTransfer.SERVER_DIRECTORY + filename, FileTransfer.WRITE);
+        fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
         DatagramPacket temp =  new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
         ackBlock++;
 
@@ -198,14 +200,15 @@ public class Connection extends SRSocket implements Runnable {
             while (true) {
                 process(request);
 
-                if (!isActive())
+                if (!isActive()) {
                     break;
+                }
 
                 request = receive();
                 inform(request, "Received Packet", true);
             }
 
-            System.out.printf("%s completed successfully and is closing...\n", getName());
+            System.out.printf("%s terminated and is closing...\n", getName());
         } catch (IOException | InvalidPacketException | UnknownIOModeException e) {
             System.out.printf("%s sent an invalid request. Terminating thread...\n", getName());
         }

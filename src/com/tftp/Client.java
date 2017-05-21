@@ -7,8 +7,8 @@ import java.net.InetAddress;
 import java.io.IOException;
 
 import com.tftp.core.SRSocket;
-import com.tftp.core.Packet;
-import com.tftp.core.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.BlockNumber;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
@@ -75,14 +75,14 @@ public class Client extends SRSocket {
             packet = new Packet().RRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.WRITE);
+            fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new Packet().WRQPacket(mode, filename, InetAddress.getLocalHost(), port);
             inform(packet, "Sending WRQ packet", true);
             send(packet);
 
-            fileTransfer = new FileTransfer(FileTransfer.CLIENT_DIRECTORY + new String(filename), FileTransfer.READ);
+            fileTransfer = new FileTransfer(new String(filename), FileTransfer.READ);
             wrq();
         }
     }
@@ -101,15 +101,9 @@ public class Client extends SRSocket {
             if (ackBlock == 0)
                 connectionTID = response.getPort();
 
-            int blockNumber = -1;
-            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                blockNumber = ackBlock;
-            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
-                blockNumber = dataBlock;
-            }
-
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
+                inform(errorPacket, "Sending Packet");
                 send(errorPacket);
                 System.out.println("Terminating Client...");
                 break;
@@ -119,6 +113,8 @@ public class Client extends SRSocket {
             }
 
             if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
+                ackBlock++;
+
                 // unpack the data portion and write it to the file
                 int length = response.getData().length;
                 byte[] data = new byte[length - 4];
@@ -130,7 +126,6 @@ public class Client extends SRSocket {
 
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
-                ackBlock++;
             } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
                 byte[] errorMsg = new byte[response.getLength() - 4];
                 System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
@@ -165,14 +160,7 @@ public class Client extends SRSocket {
             if (dataBlock == 1)
                 connectionTID = response.getPort();
 
-            int blockNumber = -1;
-            if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                blockNumber = ackBlock;
-            } else if (packet.checkPacketType(response) == Packet.PacketTypes.DATA) {
-                blockNumber = dataBlock;
-            }
-
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, blockNumber);
+            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
                 send(errorPacket);
                 System.out.println("Terminating Client...");
@@ -215,6 +203,7 @@ public class Client extends SRSocket {
     public static void main(String[] args) {
         try {
             Client client = new Client();
+            FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
 
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
