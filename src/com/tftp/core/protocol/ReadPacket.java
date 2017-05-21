@@ -30,12 +30,12 @@ public class ReadPacket extends ReadWritePacket {
         return readPacket;
     }
 
-    public DatagramPacket get(byte[] mode, byte[] filename) {
-        return createPacket(RRQ(mode, filename));
+    public void set(byte[] mode, byte[] filename) {
+        readPacket = createPacket(RRQ(mode, filename));
     }
     
-    public DatagramPacket get(byte[] mode, byte[] filename, InetAddress address, int port) {
-        return createPacket(RRQ(mode, filename), address, port);
+    public void set(byte[] mode, byte[] filename, InetAddress address, int port) {
+        readPacket = createPacket(RRQ(mode, filename), address, port);
     }
 
     private byte[] RRQ(byte[] mode, byte[] filename) {

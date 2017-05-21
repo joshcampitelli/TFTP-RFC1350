@@ -154,16 +154,20 @@ public class SRSocket extends DatagramSocket {
         //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
         if (received.getPort() != expectedTID) { //Incorrect TID
             errorMsg = "Incorrect TID";
-            errorPacket = receivedPacket.get(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (data.length > 516) {             //Error type 4: corrupt data
             errorMsg = "Data greater than 512";
-            errorPacket = receivedPacket.get(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
             errorMsg = "Undefined OpCode";
-            errorPacket = receivedPacket.get(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) != blockNumber) {
             errorMsg = "Incorrect Block Number";
-            errorPacket = receivedPacket.get(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
             errorPacket = null;
         }

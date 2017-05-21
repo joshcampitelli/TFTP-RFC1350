@@ -30,12 +30,12 @@ public class ErrorPacket extends Packet {
         return errorPacket;
     }
 
-    public DatagramPacket get(byte errorCode, byte[] errorMsg) {
-        return createPacket(ERROR(errorCode, errorMsg));
+    public void set(byte errorCode, byte[] errorMsg) {
+        errorPacket = createPacket(ERROR(errorCode, errorMsg));
     }
 
-    public DatagramPacket get(byte errorCode, byte[] errorMsg, InetAddress address, int port) {
-        return createPacket(ERROR(errorCode, errorMsg), address, port);
+    public void set(byte errorCode, byte[] errorMsg, InetAddress address, int port) {
+        errorPacket = createPacket(ERROR(errorCode, errorMsg));
     }
 
     private byte[] ERROR(byte errorCode, byte[] errorMsg) {

@@ -7,7 +7,6 @@ import java.util.Arrays;
 public class ReadWritePacket extends Packet {
 
     private DatagramPacket packet;
-    private DatagramPacket readWritePacket;
 
     public ReadWritePacket() {
         super();
