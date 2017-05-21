@@ -1,7 +1,6 @@
 package com.tftp.core;
 
-import com.tftp.core.protocol.Packet;
-import com.tftp.core.protocol.BlockNumber;
+import com.tftp.core.protocol.*;
 import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
@@ -95,7 +94,7 @@ public class Connection extends SRSocket implements Runnable {
             setActive(false);
             return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-            return new Packet(receivedPacket).ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes(), receivedPacket.getAddress(), receivedPacket.getPort());
+            return new ErrorPacket(receivedPacket, Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes()).get();
         }
 
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
