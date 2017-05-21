@@ -191,13 +191,10 @@ public class SRSocket extends DatagramSocket {
         // a File instance for the directory:
         File workingDirFile = new File(workingDir + directory);
         // a File instance for a file in that directory:
-        File testfile = new File(workingDirFile, new String(filename));
-        System.out.println("Absolute File Path: " + testfile.getAbsolutePath());
+        File testfile = new File(workingDirFile, filename);
         if (testfile.exists()) {
-            System.out.println("The File Already Exists");
             return true;
         } else {
-            System.out.println("The File Does'nt Already Exist");
             return false;
         }
     }

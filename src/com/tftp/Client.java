@@ -69,6 +69,12 @@ public class Client extends SRSocket {
             port = ERRORSIMULATOR_PORT;
         }
 
+        if (checkFilename(new String(filename), "\\data\\client")) {
+            System.out.println("The File Already Exists");
+        } else {
+            System.out.println("The File Does Not Already Exist");
+        }
+
         DatagramPacket packet;
 
         if (requestType.toLowerCase().equals("r")){
