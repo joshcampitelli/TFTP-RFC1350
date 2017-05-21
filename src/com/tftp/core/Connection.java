@@ -129,6 +129,13 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
+
+        if (checkFilename(filename, "\\data\\server")) {
+            System.out.println("The File Already Exists");
+        } else {
+            System.out.println("The File Does Not Already Exist");
+        }
+
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
         DatagramPacket temp =  new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
         ackBlock++;
