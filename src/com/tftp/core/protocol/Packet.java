@@ -22,13 +22,12 @@ public class Packet {
     public static int DATA_SIZE = 516;
     public static int ACK_SIZE = 4;
 
-    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
-    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
-
     public static final byte NO_SPECIAL_ERROR = 00;
     public static final byte INVALID_OPCODE = 01;
     public static final byte INVALID_PACKET_SIZE = 02;
     public static final byte INVALID_BLOCK_NUMBER = 03;
+    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
+    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
 
     public Packet() {
     }
@@ -101,39 +100,6 @@ public class Packet {
         }
     }
 
-
-    /**
-     * @param byte[] the matching blockNumber for the acknowledgement and data packets
-     * @param byte[] the data being sent
-     *
-     * @return a data byte array
-     */
-    public byte[] DATA(byte[] blockNumber, byte[] data) {
-        byte[] request = new byte[2 + blockNumber.length + data.length];
-        int counter = 2;
-
-        request[1] = 3;
-        System.arraycopy(blockNumber, 0, request, counter, blockNumber.length);
-
-        counter += blockNumber.length;
-
-        System.arraycopy(data, 0, request, counter, data.length);
-        return request;
-    }
-
-    /**
-     * @param byte[] the matching blockNumber for the acknowledgement and data packets
-     *
-     * @return an acknowledgement byte array
-     */
-    public byte[] ACK(byte[] blockNumber) {
-        byte[] ack = new byte[ACK_SIZE];
-        ack[1] = 4;
-        System.arraycopy(blockNumber, 0, ack, 2, 2);
-        return ack;
-    }
-
-
     /**
      * @param byte[] data for the datagram packet
      *
@@ -151,29 +117,5 @@ public class Packet {
      */
     public DatagramPacket createPacket(byte[] data, InetAddress address, int port) {
         return new DatagramPacket(data, data.length, address, port);
-    }
-
-    /**
-     *
-     * @return data datagram packet
-     */
-    public DatagramPacket DATAPacket(byte[] blockNumber, byte[] data) {
-        return createPacket(DATA(blockNumber, data));
-    }
-
-    public DatagramPacket DATAPacket(byte[] blockNumber, byte[] data, InetAddress address, int port) {
-        return createPacket(DATA(blockNumber, data), address, port);
-    }
-
-    /**
-     *
-     * @return ack datagram packet
-     */
-    public DatagramPacket ACKPacket(byte[] blockNumber) {
-        return createPacket(ACK(blockNumber));
-    }
-
-    public DatagramPacket ACKPacket(byte[] blockNumber, InetAddress address, int port) {
-        return createPacket(ACK(blockNumber), address, port);
     }
 }

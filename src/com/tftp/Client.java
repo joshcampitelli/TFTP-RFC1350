@@ -120,7 +120,7 @@ public class Client extends SRSocket {
                 System.arraycopy(response.getData(), 4, data, 0, length - 4);
                 fileTransfer.write(data);
 
-                DatagramPacket ackPacket = new Packet(response).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
+                DatagramPacket ackPacket = new AckPacket(response, BlockNumber.getBlockNumber(ackBlock)).get();
                 ackPacket.setPort(serverPort);
 
                 inform(ackPacket, "Sending ACK Packet", true);
@@ -172,7 +172,7 @@ public class Client extends SRSocket {
 
             //Ensure the packet received from the server is of type ACK
             if (packet.checkPacketType(response) == Packet.PacketTypes.ACK) {
-                DatagramPacket dataPacket = new Packet(response).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
+                DatagramPacket dataPacket = new DataPacket(response, BlockNumber.getBlockNumber(dataBlock), data).get();
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
 

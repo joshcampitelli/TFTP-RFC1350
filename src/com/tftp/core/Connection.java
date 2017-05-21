@@ -119,7 +119,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new DataPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
         dataBlock++;
 
         return temp;
@@ -129,7 +129,7 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
-        DatagramPacket temp =  new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
+        DatagramPacket temp =  new AckPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
         ackBlock++;
 
         return temp;
@@ -140,7 +140,7 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new DataPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
 
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
@@ -154,7 +154,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
 
-        DatagramPacket temp = new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
+        DatagramPacket temp = new AckPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
         ackBlock++;
         return temp;
     }
