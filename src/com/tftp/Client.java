@@ -148,6 +148,28 @@ public class Client extends SRSocket {
 
         if (fileTransfer.isComplete()) {
             System.out.println("[IMPORTANT] Transfer complete!");
+            
+            String requestType = "";
+            while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
+         	 
+                requestType = this.getInput("Would you like to Write or Read? (W/R) Or did you finish (Q): ");
+            }
+            while(!(requestType.equals("q"))){
+            	
+           
+         Client client = new Client();
+         byte[] filename = client.getInput("Enter file name: ").getBytes();
+         byte[] mode = "octet".getBytes();
+         try {
+				client.sendRequest(filename, mode, requestType);
+			} catch (UnknownIOModeException e) {
+				
+				e.printStackTrace();
+			}
+         
+    
+            }
+            
         }
     }
 
@@ -189,7 +211,27 @@ public class Client extends SRSocket {
 
                 if (fileTransfer.isComplete()) {
                     System.out.println("[IMPORTANT] Transfer complete!");
-                    break;
+                    String requestType = "";
+                    while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
+                 	 
+                        requestType = this.getInput("Would you like to Write or Read? (W/R) Or did you finish (q): ");
+                    }
+                    while(!(requestType.equals("q"))){
+                    	
+                   
+                 Client client = new Client();
+                 byte[] filename = client.getInput("Enter file name: ").getBytes();
+                 byte[] mode = "octet".getBytes();
+                 try {
+        				client.sendRequest(filename, mode, requestType);
+        			} catch (UnknownIOModeException e) {
+        				
+        				e.printStackTrace();
+        			}
+                 
+            
+                    }
+                       break;
                 }
             } else if (packet.checkPacketType(response) == Packet.PacketTypes.ERROR) {
                 byte[] errorMsg = new byte[response.getLength() - 4];
@@ -205,7 +247,8 @@ public class Client extends SRSocket {
             }
         }
     }
-
+    
+    
     public static void main(String[] args) {
         try {
             Client client = new Client();
