@@ -1,7 +1,6 @@
 package com.tftp.core;
 
-import com.tftp.core.protocol.Packet;
-import com.tftp.core.protocol.BlockNumber;
+import com.tftp.core.protocol.*;
 import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
@@ -95,7 +94,7 @@ public class Connection extends SRSocket implements Runnable {
             setActive(false);
             return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-            return new Packet(receivedPacket).ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes(), receivedPacket.getAddress(), receivedPacket.getPort());
+            return new ErrorPacket(receivedPacket, Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes()).get();
         }
 
         if (packet.checkPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
@@ -120,7 +119,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new DataPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
         dataBlock++;
 
         return temp;
@@ -137,7 +136,7 @@ public class Connection extends SRSocket implements Runnable {
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
-        DatagramPacket temp =  new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
+        DatagramPacket temp =  new AckPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
         ackBlock++;
 
         return temp;
@@ -148,7 +147,7 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new Packet(packet).DATAPacket(BlockNumber.getBlockNumber(dataBlock), data);
+        DatagramPacket temp = new DataPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
 
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
@@ -162,7 +161,7 @@ public class Connection extends SRSocket implements Runnable {
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
 
-        DatagramPacket temp = new Packet(packet).ACKPacket(BlockNumber.getBlockNumber(ackBlock));
+        DatagramPacket temp = new AckPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
         ackBlock++;
         return temp;
     }

@@ -26,8 +26,8 @@ public class FileTransfer {
     public static int READ = 1;
     public static int WRITE = 2;
     public static int BLOCK_SIZE = 512; // 512 bytes
-    public static String SERVER_DIRECTORY = "\\data\\server\\";
-    public static String CLIENT_DIRECTORY = "\\data\\client\\";
+    public static String SERVER_DIRECTORY = "/data/server/";
+    public static String CLIENT_DIRECTORY = "/data/client/";
     public static String parentDirectory;
     private File file;
     private AutoCloseable stream;
@@ -39,7 +39,7 @@ public class FileTransfer {
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
     public FileTransfer(String file, int mode) throws FileNotFoundException, UnknownIOModeException {
-        this.file = new File(parentDirectory + "\\" + file);
+        this.file = new File(parentDirectory + "/" + file);
         initialize(mode);
     }
 
