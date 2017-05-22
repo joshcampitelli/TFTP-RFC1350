@@ -1,10 +1,9 @@
-package com.tftp.core.protocol;
+package com.tftp.core.protocol.packets;
 
 import java.net.DatagramPacket;
+import com.tftp.core.protocol.Packet;
 
-import java.util.Arrays;
-
-public class ReadWritePacket extends Packet {
+public abstract class ReadWritePacket extends Packet {
 
     private DatagramPacket packet;
 

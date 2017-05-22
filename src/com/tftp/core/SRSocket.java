@@ -10,7 +10,9 @@ import java.io.IOException;
 
 import com.tftp.Client;
 import com.tftp.Server;
-import com.tftp.core.protocol.*;
+import com.tftp.core.protocol.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.packets.ERRORPacket;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
@@ -136,7 +138,7 @@ public class SRSocket extends DatagramSocket {
      *
      * parseUnknownPacket parses the packet given to it and determines which type of error it is.
      *
-     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, AckPacket Error.
+     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, ACKPacket Error.
      *                      Client Shall Terminate.
      *
      * Error Packet Type 5: Incorrect TID, meaning the Connection the Client sent a Packet to was not
@@ -150,7 +152,7 @@ public class SRSocket extends DatagramSocket {
         byte[] data = received.getData();
         String errorMsg = "";
         DatagramPacket errorPacket;
-        ErrorPacket receivedPacket = new ErrorPacket(received);
+        ERRORPacket  receivedPacket = new ERRORPacket(received);
 
         //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
         if (received.getPort() != expectedTID) { //Incorrect TID

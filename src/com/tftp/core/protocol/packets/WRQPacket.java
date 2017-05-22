@@ -1,31 +1,33 @@
-package com.tftp.core.protocol;
+package com.tftp.core.protocol.packets;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
-public class WritePacket extends ReadWritePacket {
+public class WRQPacket extends ReadWritePacket {
 
-    private DatagramPacket packet; 
+    private DatagramPacket packet;
     private DatagramPacket writePacket;
 
-    public WritePacket() {
+    public WRQPacket() {
         super();
     }
 
-    public WritePacket(DatagramPacket packet) {
+    public WRQPacket(DatagramPacket packet) {
         super(packet);
     }
 
-    public WritePacket(DatagramPacket packet, byte[] mode, byte[] filename) {
+    public WRQPacket(DatagramPacket packet, byte[] mode, byte[] filename) {
         super(packet);
-        writePacket = createPacket(WRQ(mode, filename)); 
+        writePacket = createPacket(WRQ(mode, filename));
     }
 
-    public WritePacket(byte[] mode, byte[] filename, InetAddress address, int port) {
+    public WRQPacket(byte[] mode, byte[] filename, InetAddress address, int port) {
         super();
         writePacket = createPacket(WRQ(mode, filename), address, port);
     }
 
+
+    @Override
     public DatagramPacket get() {
         return writePacket;
     }
@@ -33,7 +35,7 @@ public class WritePacket extends ReadWritePacket {
     public void set(byte[] mode, byte[] filename) {
         writePacket = createPacket(WRQ(mode, filename));
     }
-    
+
     public void set(byte[] mode, byte[] filename, InetAddress address, int port) {
         writePacket = createPacket(WRQ(mode, filename), address, port);
     }

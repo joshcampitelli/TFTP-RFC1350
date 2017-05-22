@@ -1,6 +1,5 @@
 package com.tftp.simulation;
 
-import java.util.ArrayList;
 import java.net.DatagramPacket;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
@@ -77,10 +76,9 @@ public class PacketModification {
      *          false   otherwise
      */
     public boolean isMatchingPacket(DatagramPacket target) {
-        Packet packet = new Packet();
         int blocknum = BlockNumber.getBlockNumber(target.getData());
 
-        return packet.checkPacketType(target) == packetType && blocknum == blockNumber;
+        return Packet.getPacketType(target) == packetType && blocknum == blockNumber;
     }
 
     @Override

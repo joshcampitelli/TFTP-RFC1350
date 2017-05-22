@@ -1,33 +1,33 @@
-package com.tftp.core.protocol;
+package com.tftp.core.protocol.packets;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import com.tftp.core.protocol.Packet;
 
-import java.util.Arrays;
-
-public class DataPacket extends Packet {
+public class DATAPacket extends Packet {
 
     private DatagramPacket packet;
     private DatagramPacket dataPacket;
 
-    public DataPacket() {
+    public DATAPacket() {
         super();
     }
-    
-    public DataPacket(DatagramPacket packet) {
+
+    public DATAPacket(DatagramPacket packet) {
         super(packet);
     }
 
-    public DataPacket(DatagramPacket packet, byte[] blockNumber, byte[] data) {
+    public DATAPacket(DatagramPacket packet, byte[] blockNumber, byte[] data) {
         super(packet);
         dataPacket = createPacket(DATA(blockNumber, data));
     }
 
-    public DataPacket(byte[] blockNumber, byte[] data, InetAddress address, int port) {
+    public DATAPacket(byte[] blockNumber, byte[] data, InetAddress address, int port) {
         super();
         dataPacket = createPacket(DATA(blockNumber, data), address, port);
     }
 
+    @Override
     public DatagramPacket get() {
         return dataPacket;
     }
@@ -35,7 +35,7 @@ public class DataPacket extends Packet {
     public void set(byte[] blockNumber, byte[] data) {
         dataPacket = createPacket(DATA(blockNumber, data));
     }
-    
+
     public void set(byte[] blockNumber, byte[] data, InetAddress address, int port) {
         dataPacket = createPacket(DATA(blockNumber, data), address, port);
     }

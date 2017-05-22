@@ -15,7 +15,7 @@ import java.util.Arrays;
  * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
  * @since May the 8th, 2017.
  */
-public class Packet {
+public abstract class Packet {
 
     private DatagramPacket packet;
     public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
@@ -36,6 +36,9 @@ public class Packet {
         this.packet = packet;
     }
 
+
+    public abstract DatagramPacket get();
+
     /**
      *
      * Recursively matches a byte array pattern with the provided form as a string where the following letters in the string are important:
@@ -43,11 +46,11 @@ public class Packet {
      * - c: stands for control and checks for the given byte with the control byte the array provided
      * - x: stands for don't care, used for skipping a dynamic input that terminates once the next pattern in line is found.
      */
-    protected boolean matches(byte[] data, int size, String form, byte opcode) {
+    protected static boolean matches(byte[] data, int size, String form, byte opcode) {
         return matches(data, 0, size, form, opcode, false);
     }
 
-    protected boolean matches(byte[] data, int index, int size, String form, byte opcode, boolean inText) {
+    protected static boolean matches(byte[] data, int index, int size, String form, byte opcode, boolean inText) {
         // base case
         if (form.isEmpty() && index == size) {
             return true;
@@ -82,7 +85,7 @@ public class Packet {
      * PacketTypes method uses the matches method to determine the type of packet sent to the server
      * then returns the type as an enum temporarily, could have a class with setPacketType() etc.
      */
-    public PacketTypes checkPacketType(DatagramPacket packet) {
+    public static PacketTypes getPacketType(DatagramPacket packet) {
         byte read = 1, write = 2, data = 3, ack = 4, error = 5;
 
         if (matches(packet.getData(), packet.getLength(), "0cx0x0", read)) {
@@ -101,7 +104,7 @@ public class Packet {
     }
 
     /**
-     * @param byte[] data for the datagram packet
+     * @param data byte[] for the datagram packet
      *
      * @return datagram packet
      *

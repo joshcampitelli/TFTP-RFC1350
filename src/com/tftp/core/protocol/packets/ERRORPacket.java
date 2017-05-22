@@ -1,31 +1,33 @@
-package com.tftp.core.protocol;
+package com.tftp.core.protocol.packets;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import com.tftp.core.protocol.Packet;
 
-public class ErrorPacket extends Packet {
+public class ERRORPacket extends Packet {
 
     private DatagramPacket packet;
     private DatagramPacket errorPacket;
 
-    public ErrorPacket() {
+    public ERRORPacket() {
         super();
     }
 
-    public ErrorPacket(DatagramPacket packet) {
+    public ERRORPacket(DatagramPacket packet) {
         super(packet);
     }
-    
-    public ErrorPacket(DatagramPacket packet, byte errorCode, byte[] errorMsg) {
+
+    public ERRORPacket(DatagramPacket packet, byte errorCode, byte[] errorMsg) {
         super(packet);
         errorPacket = createPacket(ERROR(errorCode, errorMsg));
     }
 
-    public ErrorPacket(byte errorCode, byte[] errorMsg, InetAddress address, int port) {
+    public ERRORPacket(byte errorCode, byte[] errorMsg, InetAddress address, int port) {
         super();
         errorPacket = createPacket(ERROR(errorCode, errorMsg), address, port);
     }
 
+    @Override
     public DatagramPacket get() {
         return errorPacket;
     }
