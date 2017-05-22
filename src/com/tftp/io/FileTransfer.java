@@ -79,6 +79,25 @@ public class FileTransfer {
         }
     }
 
+    /**
+     * Dynamically adjusts the filename to the next available name that does not exist.
+     * e.g. if test.txt exists, this function returns test (1).txt.
+     *      if test.txt and test (1).txt exist, this function returns test (2).txt.
+     * @param filename the file path
+     *
+     * @return the adjusted, non-existing filename
+     */
+    public static String getAdjustedFilename(String filename) {
+        int i = 0;
+        while (isFileExisting(filename)) {
+            int dot = filename.indexOf(".");
+            i++;
+
+            filename = String.format("%s (%d).%s", filename.substring(0, dot), i, filename.substring(dot + 1));
+        }
+
+        return filename;
+    }
 
     /**
      * Checks if the specified file is already existing.
@@ -88,9 +107,18 @@ public class FileTransfer {
      * @return  true    if the file exists
      *          false   otherwise
      */
-    public boolean isFileExisting(String file) {
+    public static boolean isFileExisting(String file) {
         File f = new File(parentDirectory + "\\" + file);
         return f.exists() && !f.isDirectory();
+    }
+
+    /**
+     * Attempts to delete the file passed on construction of this instance.
+     *
+     * @return  if the deletion completed successfully.
+     */
+    public boolean delete() {
+        return file.delete();
     }
 
 
