@@ -64,7 +64,7 @@ public class Client extends SRSocket {
         this.isNormal = normal;
     }
 
-    private void sendRequest(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
+    private void transfer(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
             port = ERRORSIMULATOR_PORT;
@@ -96,7 +96,6 @@ public class Client extends SRSocket {
 
     private void rrq() throws IOException {
         DatagramPacket response;
-        Packet packet;
 
         do {
             response = receive();
@@ -144,38 +143,16 @@ public class Client extends SRSocket {
                 System.out.println("Terminating Client...");
                 break;
             }
-        } while (response.getData().length == Packet.DATA_SIZE);
+        } while (!fileTransfer.isComplete());
 
-        if (fileTransfer.isComplete()) {
-            System.out.println("[IMPORTANT] Transfer complete!");
-            
-            String requestType = "";
-            while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
-         	 
-                requestType = this.getInput("Would you like to Write or Read? (W/R) Or did you finish (Q): ");
-            }
-            while(!(requestType.equals("q"))){
-            	
-           
-         Client client = new Client();
-         byte[] filename = client.getInput("Enter file name: ").getBytes();
-         byte[] mode = "octet".getBytes();
-         try {
-				client.sendRequest(filename, mode, requestType);
-			} catch (UnknownIOModeException e) {
-				
-				e.printStackTrace();
-			}
-         
-    
-            }
-            
-        }
+        System.out.println("[IMPORTANT] Transfer complete!");
+
     }
 
     private void wrq() throws IOException {
         DatagramPacket response;
-        while(true) {
+
+        while(!fileTransfer.isComplete()) {
             response = receive();
 
             serverPort = response.getPort();
@@ -206,31 +183,6 @@ public class Client extends SRSocket {
                 inform(dataPacket, "Sending DATA Packet", true);
                 send(dataPacket);
                 dataBlock++;
-
-                if (fileTransfer.isComplete()) {
-                    System.out.println("[IMPORTANT] Transfer complete!");
-                    String requestType = "";
-                    while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
-                 	 
-                        requestType = this.getInput("Would you like to Write or Read? (W/R) Or did you finish (q): ");
-                    }
-                    while(!(requestType.equals("q"))){
-                    	
-                   
-                 Client client = new Client();
-                 byte[] filename = client.getInput("Enter file name: ").getBytes();
-                 byte[] mode = "octet".getBytes();
-                 try {
-        				client.sendRequest(filename, mode, requestType);
-        			} catch (UnknownIOModeException e) {
-        				
-        				e.printStackTrace();
-        			}
-                 
-            
-                    }
-                       break;
-                }
             } else if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
                 byte[] errorMsg = new byte[response.getLength() - 4];
                 System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
@@ -244,6 +196,8 @@ public class Client extends SRSocket {
                 break;
             }
         }
+
+        System.out.println("[IMPORTANT] Transfer complete!");
     }
     
     
@@ -263,14 +217,23 @@ public class Client extends SRSocket {
                 verbose = true;
             }
 
-            String requestType = "";
-            while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
-                requestType = client.getInput("Would you like to Write or Read? (W/R) ");
-            }
+            String quit = "";
+            while (!quit.equalsIgnoreCase("n")) {
+                String requestType = "";
+                while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
+                    requestType = client.getInput("Would you like to Write or Read? (W/R) ");
+                }
 
-            byte[] filename = client.getInput("Enter file name: ").getBytes();
-            byte[] mode = "octet".getBytes();
-            client.sendRequest(filename, mode, requestType);
+                byte[] filename = client.getInput("Enter file name: ").getBytes();
+                byte[] mode = "octet".getBytes();
+                client.transfer(filename, mode, requestType);
+                client.close();
+
+                client = new Client();
+                client.setNormal(!dataMode.toLowerCase().equals("y"));
+
+                quit = client.getInput("Would you like to start a new transfer? (y/N) ");
+            }
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
         }
