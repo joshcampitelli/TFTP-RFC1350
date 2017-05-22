@@ -25,11 +25,9 @@ import com.tftp.io.FileTransfer;
  */
 public class Client extends SRSocket {
 
-    public static final byte REQUEST_READ = 1, REQUEST_WRITE = 2;
     public static final int ERRORSIMULATOR_PORT = 23;
     public static boolean verbose;
 
-    private int TID;
     private int serverPort = 69;
     private int dataBlock = 1;
     private int ackBlock = 0;
@@ -39,7 +37,6 @@ public class Client extends SRSocket {
 
     public Client() throws IOException {
         super("Client");
-        this.TID = getLocalPort();
     }
 
     /**
@@ -56,14 +53,28 @@ public class Client extends SRSocket {
         return scanner.nextLine();
     }
 
-    public int getTID() {
-        return this.TID;
-    }
-
+    /**
+     * Sets the instance state of the client regarding where the packet should be sent to.
+     * A normal state would send the initial packet to the main server (port id: 69).
+     * A testing state would send the initial packet to the error simulator (port id: 23).
+     * @param normal
+     */
     public void setNormal(boolean normal) {
         this.isNormal = normal;
     }
 
+
+    /**
+     * Attempts to establish the transfer with the destination. Once a response has been received, the cycle
+     * logic converges to the necessary method (i.e. rrq() or wrq()).
+     *
+     * @param filename the operator-provided filename
+     * @param mode the operator-provided mode
+     * @param requestType the operator-provided request type (i.e. RRQ or WRQ)
+     *
+     * @throws IOException
+     * @throws UnknownIOModeException
+     */
     private void transfer(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
@@ -94,17 +105,26 @@ public class Client extends SRSocket {
         }
     }
 
+
+    /**
+     * Completes the read (RRQ) cycle that has been requested by the operator.
+     * Ideally, ACK packets are sent to the destination and DATA packets are received from the destination until
+     * the last DATA packet has been read.
+     *
+     * The client is equipped with the knowledge to handle abnormal packets and take the necessary measures. Not
+     * all measures are fatal and the client does attempt to recover the authenticity of the connection, if possible.
+     *
+     * @throws IOException
+     */
     private void rrq() throws IOException {
         DatagramPacket response;
+        response = receive();
+        connectionTID = response.getPort();
 
-        do {
-            response = receive();
+        while (true) {
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
-
-            if (ackBlock == 0)
-                connectionTID = response.getPort();
 
             DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
@@ -131,37 +151,45 @@ public class Client extends SRSocket {
 
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
-            } else if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
-                byte[] errorMsg = new byte[response.getLength() - 4];
-                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
-                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
-                System.out.println("Terminating Client...");
-                break;
             } else {
-                String errorMsg = "Incorrect Packet Received";
-                send(new ERRORPacket(response, Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).get());    //Send error packet with error code 4.
+                troubleshoot(response);
                 System.out.println("Terminating Client...");
+
                 break;
             }
-        } while (!fileTransfer.isComplete());
+
+            if (fileTransfer.isComplete()) {
+                break;
+            }
+
+            response = receive();
+        }
 
         System.out.println("[IMPORTANT] Transfer complete!");
 
     }
 
+
+    /**
+     * Completes the write (WRQ) cycle that has been requested by the operator.
+     * Ideally, DATA packets are sent to the destination and ACK packets are received from the destination until
+     * the last DATA packet has been reached.
+     *
+     * The client is equipped with the knowledge to handle abnormal packets and take the necessary measures. Not
+     * all measures are fatal and the client does attempt to recover the authenticity of the connection, if possible.
+     *
+     * @throws IOException
+     */
     private void wrq() throws IOException {
         DatagramPacket response;
+        response = receive();
+        connectionTID = response.getPort();
 
-        while(!fileTransfer.isComplete()) {
-            response = receive();
+        while(true) {
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
             byte[] data = fileTransfer.read();
-
-            //Gets the Connection Port which it will be communicating
-            if (dataBlock == 1)
-                connectionTID = response.getPort();
 
             DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
@@ -183,22 +211,43 @@ public class Client extends SRSocket {
                 inform(dataPacket, "Sending DATA Packet", true);
                 send(dataPacket);
                 dataBlock++;
-            } else if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
-                byte[] errorMsg = new byte[response.getLength() - 4];
-                System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
-                System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+            } else {
+                troubleshoot(response);
                 System.out.println("Terminating Client...");
-                break;
-            } else {    //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
-                String errorMsg = "Incorrect Packet Received";
-                send(new ERRORPacket(response, Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).get());    //Send error packet with error code 4.
-                System.out.println("Terminating Client...");
+
                 break;
             }
+
+            if (fileTransfer.isComplete()) {
+                break;
+            }
+
+            response = receive();
         }
 
         System.out.println("[IMPORTANT] Transfer complete!");
     }
+
+
+    /**
+     * Troubleshoots the response received for the abnormality.
+     *
+     * @param response the abnormal DatagramPacket
+     * @throws IOException
+     */
+    private void troubleshoot(DatagramPacket response) throws IOException {
+        if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
+            byte[] errorMsg = new byte[response.getLength() - 4];
+            System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
+            System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+        } else {
+
+            //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
+            String errorMsg = "Incorrect Packet Received";
+            send(new ERRORPacket(response, Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).get());
+        }
+    }
+
     
     
     public static void main(String[] args) {
