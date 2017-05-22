@@ -81,12 +81,6 @@ public class Client extends SRSocket {
             port = ERRORSIMULATOR_PORT;
         }
 
-        if (checkFilename(new String(filename), "\\data\\client")) {
-            System.out.println("The File Already Exists");
-        } else {
-            System.out.println("The File Does Not Already Exist");
-        }
-
         DatagramPacket packet;
 
         if (requestType.toLowerCase().equals("r")){
@@ -96,6 +90,11 @@ public class Client extends SRSocket {
             fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
+            if (!FileTransfer.isFileExisting(new String(filename))) {
+                System.out.println("The File you wish to write does not exist.");
+                return;
+            }
+
             packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
             inform(packet, "Sending WRQ packet", true);
             send(packet);
@@ -240,6 +239,10 @@ public class Client extends SRSocket {
             byte[] errorMsg = new byte[response.getLength() - 4];
             System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
             System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+
+            if (response.getData()[3] == 1) //File Not Found Error
+                fileTransfer.delete();
+
         } else {
 
             //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
@@ -248,8 +251,6 @@ public class Client extends SRSocket {
         }
     }
 
-    
-    
     public static void main(String[] args) {
         try {
             Client client = new Client();

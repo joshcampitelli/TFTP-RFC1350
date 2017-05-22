@@ -117,6 +117,12 @@ public class Connection extends SRSocket implements Runnable {
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
     private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
+
+        if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
+            System.out.println("Invalid Request Received, File Does Not Exist.");
+            return new ERRORPacket(packet, (byte)1, ("File Not Found: " + filename).getBytes()).get();
+        }
+
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
@@ -131,10 +137,9 @@ public class Connection extends SRSocket implements Runnable {
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
 
-        if (checkFilename(filename, "\\data\\server")) {
-            System.out.println("The File Already Exists");
-        } else {
-            System.out.println("The File Does Not Already Exist");
+        if (FileTransfer.isFileExisting(filename)) { //File Already Exists on Server
+            filename = FileTransfer.getAdjustedFilename(filename);
+            System.out.println("The File Already Exists, renaming to: " + filename);
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
@@ -160,6 +165,7 @@ public class Connection extends SRSocket implements Runnable {
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
+        //TODO: Check here if the server has enough space to store packet.getLength(); If not return Error Packet 3: Disk Full or Allocation Exceeded
         byte[] msg = extractData(packet.getData());
         fileTransfer.write(msg);
 
