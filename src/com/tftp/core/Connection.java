@@ -91,7 +91,13 @@ public class Connection extends SRSocket implements Runnable {
             blockNumber = ackBlock;
         }
 
-        DatagramPacket errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
+        DatagramPacket errorPacket;
+        if (Packet.getPacketType(receivedPacket) == Packet.PacketTypes.ERROR) {
+            return errorReceived(receivedPacket);
+        } else {
+            errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
+        }
+        
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
             setActive(false);
             return errorPacket; //Sends the error packet
@@ -107,8 +113,6 @@ public class Connection extends SRSocket implements Runnable {
             return ackReceived(receivedPacket);
         } else if (Packet.getPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
             return dataReceived(receivedPacket);
-        } else if (Packet.getPacketType(receivedPacket) == Packet.PacketTypes.ERROR) {
-            return errorReceived(receivedPacket);
         } else {
             throw new InvalidPacketException("Illegal data buffer!!!");
         }
@@ -160,8 +164,13 @@ public class Connection extends SRSocket implements Runnable {
 
     //Data Received extracts the data (removed opcode/block#) then uses FileTransfer Object to Write the data
     private DatagramPacket dataReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        //TODO: Check here if the server has enough space to store packet.getLength(); If not return Error Packet 3: Disk Full or Allocation Exceeded
         byte[] msg = extractData(packet.getData());
+
+        if (FileTransfer.getFreeSpace() < msg.length) {
+            fileTransfer.delete(); //Deletes the Incomplete file from the server.
+            return new ERRORPacket(packet, (byte)3, ("Disk Full or Allocation Exceeded").getBytes()).get();
+        }
+
         fileTransfer.write(msg);
 
         DatagramPacket temp = new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
@@ -174,17 +183,11 @@ public class Connection extends SRSocket implements Runnable {
     //Packet that means the client has sent it an error, if its TID then the Connection is communicating with
     //The incorrect client.
     private DatagramPacket errorReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        //Close the connection, since it received the error packet the client has already shut down
-        //Upon detecting an illegal TFTP the connection must inform the client by sending error packet
-        if (packet.getData()[3] == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
-            //If the Server receives an invalid TID it must terminate, this means the Server is communicating with an incorrect Client
-            System.out.println("Error Packet Received: Error Code: 0" + packet.getData()[3] + ", Error Message: Unknown transfer ID");
-            return null;
-        } else {
-            //Which essentially closes the Connection, if we have received an error type 4 the Client has already shut down
-            System.out.println("Error Packet Received: Error Code: 0" + packet.getData()[3] + ", Error Message: Illegal TFTP Operation");
-            return null;
-        }
+        //If the Server receives an invalid TID it must terminate, this means the Server is communicating with an incorrect Client
+        byte[] errorMsg = new byte[packet.getLength() - 4];
+        System.arraycopy(packet.getData(), 4, errorMsg, 0, packet.getData().length - 4);
+        System.out.println("Error Packet Received: Error Code: 0" + packet.getData()[3] + ", Error Message: " + new String(errorMsg));
+        return null;
     }
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {

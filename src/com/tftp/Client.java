@@ -143,6 +143,14 @@ public class Client extends SRSocket {
                 int length = response.getData().length;
                 byte[] data = new byte[length - 4];
                 System.arraycopy(response.getData(), 4, data, 0, length - 4);
+
+                if (FileTransfer.getFreeSpace() < data.length) {
+                    System.out.println("Disk Full or Allocation Exceeded, Terminating Transfer.");
+                    fileTransfer.delete();
+                    send(new ERRORPacket(response, (byte)3, ("Disk Full or Allocation Exceeded").getBytes()).get());
+                    return;
+                }
+
                 fileTransfer.write(data);
 
                 DatagramPacket ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).get();
@@ -189,6 +197,11 @@ public class Client extends SRSocket {
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
             byte[] data = fileTransfer.read();
+
+            if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
+                troubleshoot(response);
+                break;
+            }
 
             DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {

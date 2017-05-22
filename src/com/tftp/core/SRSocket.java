@@ -179,29 +179,4 @@ public class SRSocket extends DatagramSocket {
 
         return errorPacket;
     }
-
-    /**
-     * @param filename is the filename given by the user in an rrq or wrq.
-     * @param directory is the folder which you would like to search for the specific file.
-     * @return type is boolean.
-     *
-     * checkFilename determines whether the given file exists within the given directory. This method
-     * returns true if the file exists and false if not.
-     *
-     * Examples of a directory: "\\data\\client" -In the case of Client.
-     *                          "\\data\\server" -In the case of Connection.
-     */
-    public boolean checkFilename(String filename, String directory) {
-        String workingDir = System.getProperty("user.dir");
-        // a File instance for the directory:
-        File workingDirFile = new File(workingDir + directory);
-        // a File instance for a file in that directory:
-        File testfile = new File(workingDirFile, filename);
-        if (testfile.exists()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 }
