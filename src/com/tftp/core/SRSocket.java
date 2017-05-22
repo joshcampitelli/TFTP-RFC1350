@@ -10,8 +10,9 @@ import java.io.IOException;
 
 import com.tftp.Client;
 import com.tftp.Server;
-import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.BlockNumber;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.packets.ERRORPacket;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
@@ -137,7 +138,7 @@ public class SRSocket extends DatagramSocket {
      *
      * parseUnknownPacket parses the packet given to it and determines which type of error it is.
      *
-     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, AckPacket Error.
+     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, ACKPacket Error.
      *                      Client Shall Terminate.
      *
      * Error Packet Type 5: Incorrect TID, meaning the Connection the Client sent a Packet to was not
@@ -151,21 +152,25 @@ public class SRSocket extends DatagramSocket {
         byte[] data = received.getData();
         String errorMsg = "";
         DatagramPacket errorPacket;
-        Packet packet = new Packet(received);
+        ERRORPacket  receivedPacket = new ERRORPacket(received);
 
         //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
         if (received.getPort() != expectedTID) { //Incorrect TID
             errorMsg = "Incorrect TID";
-            errorPacket = packet.ERRORPacket(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (data.length > 516) {             //Error type 4: corrupt data
             errorMsg = "Data greater than 512";
-            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
             errorMsg = "Undefined OpCode";
-            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) != blockNumber) {
             errorMsg = "Incorrect Block Number";
-            errorPacket = packet.ERRORPacket(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.get();
         } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
             errorPacket = null;
         }
