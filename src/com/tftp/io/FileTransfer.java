@@ -118,9 +118,9 @@ public class FileTransfer {
      * @return  if the deletion completed successfully.
      */
     public boolean delete() {
+        done();
         return file.delete();
     }
-
 
     /**
      * Reads up to BLOCK_SIZE worth of data from the FileInputStream.
