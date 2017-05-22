@@ -39,6 +39,10 @@ public class FileTransfer {
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
     public FileTransfer(String file, int mode) throws FileNotFoundException, UnknownIOModeException {
+        if (mode == WRITE && isFileExisting(file)) {
+            file = getAdjustedFilename(file);
+        }
+
         this.file = new File(parentDirectory + "/" + file);
         initialize(mode);
     }
@@ -79,25 +83,6 @@ public class FileTransfer {
         }
     }
 
-    /**
-     * Dynamically adjusts the filename to the next available name that does not exist.
-     * e.g. if test.txt exists, this function returns test (1).txt.
-     *      if test.txt and test (1).txt exist, this function returns test (2).txt.
-     * @param filename the file path
-     *
-     * @return the adjusted, non-existing filename
-     */
-    public static String getAdjustedFilename(String filename) {
-        int i = 0;
-        while (isFileExisting(filename)) {
-            int dot = filename.indexOf(".");
-            i++;
-
-            filename = String.format("%s (%d).%s", filename.substring(0, dot), i, filename.substring(dot + 1));
-        }
-
-        return filename;
-    }
 
     /**
      * Checks if the specified file is already existing.
@@ -112,15 +97,51 @@ public class FileTransfer {
         return f.exists() && !f.isDirectory();
     }
 
+
     /**
-     * Attempts to delete the file passed on construction of this instance.
+     * Retrieves the total allocatable bytes in the parent directory.
      *
-     * @return  if the deletion completed successfully.
+     * @return the amount of allocatable bytes as a long primitive type
      */
+    public static long getFreeSpace() {
+        return new File(parentDirectory).getFreeSpace();
+    }
+
+
+    /**
+    * Attempts to delete the file passed on construction of this instance.
+    * WARNING: invoking delete() will discontinue you from accessing this instance normally as it invokes
+    * the done() method.
+    *
+    * @return  if the deletion completed successfully.
+    */
     public boolean delete() {
         done();
         return file.delete();
     }
+
+
+    /**
+    * Dynamically adjusts the filename to the next available name that does not exist.
+    * e.g. if test.txt exists, this function returns test (1).txt.
+    *      if test.txt and test (1).txt exist, this function returns test (2).txt.
+    * @param filename the file path
+    *
+    * @return the adjusted, non-existing filename
+    */
+    private String getAdjustedFilename(String filename) {
+        int i = 0;
+        String adjusted = filename;
+        while (isFileExisting(adjusted)) {
+            int dot = filename.indexOf(".");
+            i++;
+
+            adjusted = String.format("%s (%d).%s", filename.substring(0, dot), i, filename.substring(dot + 1));
+        }
+
+        return adjusted;
+    }
+
 
     /**
      * Reads up to BLOCK_SIZE worth of data from the FileInputStream.

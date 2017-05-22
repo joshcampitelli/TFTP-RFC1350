@@ -136,13 +136,8 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
-
-        if (FileTransfer.isFileExisting(filename)) { //File Already Exists on Server
-            filename = FileTransfer.getAdjustedFilename(filename);
-            System.out.println("The File Already Exists, renaming to: " + filename);
-        }
-
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
+
         DatagramPacket temp =  new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
         ackBlock++;
 
