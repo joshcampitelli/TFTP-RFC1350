@@ -117,20 +117,20 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest, boolean sendOnly) throws IOException {
         switch (modification.getErrorType()) {
-            case Packet.INVALID_OPCODE:
+            case Packet.SIMULATOR_INVALID_OPCODE:
 
                 // corrupt the opcode, random number above the last legal opcode (i.e. >5)
                 packet.getData()[1] = (byte) (Math.random() * 100 + 6);
                 break;
 
-            case Packet.INVALID_PACKET_SIZE:
+            case Packet.SIMULATOR_INVALID_PACKET_SIZE:
 
                 // change the array size to more than 512
                 byte[] arr = enlarge(packet.getData(), (int) (Math.random() * 512 + 512));
                 packet.setData(arr);
                 break;
 
-            case Packet.INVALID_BLOCK_NUMBER:
+            case Packet.SIMULATOR_INVALID_BLOCK_NUMBER:
 
                 // corrupt the block number, choose a random byte
                 packet.getData()[2] = (byte) (Math.random() * 256);

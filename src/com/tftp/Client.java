@@ -147,7 +147,7 @@ public class Client extends SRSocket {
                 if (FileTransfer.getFreeSpace() < data.length) {
                     System.out.println("Disk Full or Allocation Exceeded, Terminating Transfer.");
                     fileTransfer.delete();
-                    send(new ERRORPacket(response, (byte)3, ("Disk Full or Allocation Exceeded").getBytes()).get());
+                    send(new ERRORPacket(response, Packet.ERROR_DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).get());
                     return;
                 }
 
@@ -280,8 +280,8 @@ public class Client extends SRSocket {
                 verbose = true;
             }
 
-            String quit = "";
-            while (!quit.equalsIgnoreCase("n")) {
+            String newTransfer = "y";
+            while (newTransfer.equalsIgnoreCase("y")) {
                 String requestType = "";
                 while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
                     requestType = client.getInput("Would you like to Write or Read? (W/R) ");
@@ -295,7 +295,7 @@ public class Client extends SRSocket {
                 client = new Client();
                 client.setNormal(!dataMode.toLowerCase().equals("y"));
 
-                quit = client.getInput("Would you like to start a new transfer? (y/N) ");
+                newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
             }
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();

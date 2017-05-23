@@ -38,7 +38,7 @@ public class PacketModification {
 
     /**
      * Sets the type of error the modified packet should produce. When providing the value, please only use
-     * the static constants in Packet. (i.e. INVALID_OPCODE)
+     * the static constants in Packet. (i.e. SIMULATOR_INVALID_OPCODE)
      */
     public void setErrorType(byte error) {
         this.errorType = error;

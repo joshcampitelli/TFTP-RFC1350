@@ -138,11 +138,11 @@ public class ErrorSimulator extends SRSocket {
      * IMPORTANT: add and remove as many as you want while testing.
      */
     public void presetModifications() {
-        queueModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_OPCODE);
-        queueModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
-        queueModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_PACKET_SIZE);
-        queueModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
-        queueModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.INVALID_BLOCK_NUMBER);
-        queueModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.NO_SPECIAL_ERROR);
+        queueModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_OPCODE);
+        queueModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_BLOCK_NUMBER);
+        queueModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_PACKET_SIZE);
+        queueModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.SIMULATOR_NO_SPECIAL_ERROR);
+        queueModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_BLOCK_NUMBER);
+        queueModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.SIMULATOR_NO_SPECIAL_ERROR);
     }
 }
