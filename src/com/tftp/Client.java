@@ -147,7 +147,7 @@ public class Client extends SRSocket {
                 if (FileTransfer.getFreeSpace() < data.length) {
                     System.out.println("Disk Full or Allocation Exceeded, Terminating Transfer.");
                     fileTransfer.delete();
-                    send(new ERRORPacket(response, (byte)3, ("Disk Full or Allocation Exceeded").getBytes()).get());
+                    send(new ERRORPacket(response, Packet.ERROR_DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).get());
                     return;
                 }
 

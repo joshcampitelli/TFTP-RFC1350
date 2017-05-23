@@ -124,7 +124,7 @@ public class Connection extends SRSocket implements Runnable {
 
         if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
             System.out.println("Invalid Request Received, File Does Not Exist.");
-            return new ERRORPacket(packet, (byte)1, ("File Not Found: " + filename).getBytes()).get();
+            return new ERRORPacket(packet, ERROR_FILE_NOT_FOUND, ("File Not Found: " + filename).getBytes()).get();
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
@@ -168,7 +168,7 @@ public class Connection extends SRSocket implements Runnable {
 
         if (FileTransfer.getFreeSpace() < msg.length) {
             fileTransfer.delete(); //Deletes the Incomplete file from the server.
-            return new ERRORPacket(packet, (byte)3, ("Disk Full or Allocation Exceeded").getBytes()).get();
+            return new ERRORPacket(packet, ERROR_DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).get();
         }
 
         fileTransfer.write(msg);
