@@ -1,7 +1,7 @@
 Course code: SYSC3303A
-Group number: 2
+Group number: 3
 Iteration number: 2
-Date: May 16, 2017. 
+Date: May 23, 2017. 
 Students (by alphabetical order):
          Josh Campitelli (101010050)
          Ahmed Khattab (100994398)
@@ -14,7 +14,7 @@ Breakdown of responsibilities:
 - Josh Campitelli: Contributed handling errors 1 to 6, categorizing all I/O errors in connection.java, as well as improving the codes in client and server sides.  
 - Ahmed Khattab: Introduced the timing diagrams, specified messages for each error to be displayed to the client's user and helped defining the interaction between Client.java and its user. 
 - Dario Luzuriaga: Contributed to improving the Error Simulator, in particular, making it easier for users to introduce errors in packets, helped to define new procedures of writing files, and contributed generating documents and UML diagrams. 
-- Ahmed Sakr: Improved the error simulator and introduced new documentation and comments inside the programming codes, adjusted the coding style and accessibility to methods in order to make debugging easier. 
+- Ahmed Sakr: Refactored the error simulator, the client, and some of the packeting classes. Introduced new documentation across the whole codebase. Wrote many methods for the FileTransfer interface to allow for I/O operations to be completed. Fixed some pre-existing errors.
 - Brian Zhang: Helped to define and integrate all I/O error packets, operated improvements in packet.java and increased the efficiency in handling packets in all instances. 
 
 Iteration 3: 
@@ -48,7 +48,7 @@ There is a second way to run the TFTP server, via executing these files for Wind
 
 Testing:
 --------
-In this case the tests can be run from the interfaces of Client.java, ErrorSimulator.java and Server.java without any other class or special method. The locations of files can now be changed on the client and server's sides. The processes of reading from the server or writing on the server can now be defined from the client's side in a cyclical way, without restarting the Client.java execution. Also, the error simulator allows the user to enter any defined error in an interactive interface to implement all necessary tests. 
+In this case the tests can be run from the interfaces of Client.java, ErrorSimulator.java and Server.java without any other class or special method. The locations of files can now be changed on the client and server's sides. The processes of reading from the server or writing on the server can now be defined from the client's side in a cyclical way, without restarting the Client.java execution. Also, the error simulator allows the user to enter any defined error in an interactive interface to implement the necessary tests. 
 
 Issues:
 -------
