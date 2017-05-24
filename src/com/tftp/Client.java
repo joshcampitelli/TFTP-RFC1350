@@ -89,6 +89,7 @@ public class Client extends SRSocket {
 
             if (!FileTransfer.isWritable()) {
                 send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                System.out.println("File Access Violation, Terminating Transfer.");
                 return;
             }
 
@@ -97,15 +98,16 @@ public class Client extends SRSocket {
             fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
-            if (!FileTransfer.isFileExisting(new String(filename))) {
-                System.out.println("The File you wish to write does not exist.");
-                return;
-            }
-
             packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
 
             if (!FileTransfer.isReadable()) {
                 send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                System.out.println("File Access Violation, Terminating Transfer.");
+                return;
+            }
+
+            if (!FileTransfer.isFileExisting(new String(filename))) {
+                System.out.println("The File you wish to write does not exist.");
                 return;
             }
 
@@ -137,6 +139,11 @@ public class Client extends SRSocket {
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
+
+            if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
+                troubleshoot(response);
+                break;
+            }
 
             DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
             if (errorPacket != null && errorPacket.getData()[3] == 4) {
@@ -281,7 +288,6 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
             FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
-            System.out.println(FileTransfer.isWritable());
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
                 client.setNormal(false);
