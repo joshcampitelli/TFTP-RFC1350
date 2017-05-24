@@ -1,5 +1,6 @@
 package com.tftp;
 
+import java.io.File;
 import java.util.Scanner;
 
 import java.net.DatagramPacket;
@@ -85,6 +86,12 @@ public class Client extends SRSocket {
 
         if (requestType.toLowerCase().equals("r")){
             packet = new RRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
+
+            if (!FileTransfer.isWritable()) {
+                send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                return;
+            }
+
             inform(packet, "Sending RRQ packet", true);
             send(packet);
             fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
@@ -96,6 +103,12 @@ public class Client extends SRSocket {
             }
 
             packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
+
+            if (!FileTransfer.isReadable()) {
+                send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                return;
+            }
+
             inform(packet, "Sending WRQ packet", true);
             send(packet);
 

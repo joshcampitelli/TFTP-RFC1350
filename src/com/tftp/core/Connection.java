@@ -125,6 +125,8 @@ public class Connection extends SRSocket implements Runnable {
         if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
             System.out.println("Invalid Request Received, File Does Not Exist.");
             return new ERRORPacket(packet, Packet.ERROR_FILE_NOT_FOUND, ("File Not Found: " + filename).getBytes()).get();
+        } else if (!FileTransfer.isReadable()) {
+            return new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get();
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
@@ -140,6 +142,11 @@ public class Connection extends SRSocket implements Runnable {
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
         String filename = extractFilename(packet);
+
+        if (!FileTransfer.isWritable()) {
+            return new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get();
+        }
+
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
 
         DatagramPacket temp =  new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
