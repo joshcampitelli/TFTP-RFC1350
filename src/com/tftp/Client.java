@@ -281,7 +281,7 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
             FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
-
+            System.out.println(FileTransfer.isWritable());
             String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
             if (dataMode.toLowerCase().equals("y")) {
                 client.setNormal(false);

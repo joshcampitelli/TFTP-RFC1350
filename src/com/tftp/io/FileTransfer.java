@@ -90,7 +90,13 @@ public class FileTransfer {
      * @return the write privileges of the parent directory
      */
     public static boolean isWritable() {
-        return new File(parentDirectory).canWrite();
+        try {
+            FileTransfer ft = new FileTransfer("test access.txt", FileTransfer.WRITE);
+            ft.delete();
+            return true;
+        } catch (IOException | UnknownIOModeException ex) {
+            return false;
+        }
     }
 
 
@@ -100,7 +106,13 @@ public class FileTransfer {
      * @return the read privileges of the parent directory
      */
     public static boolean isReadable() {
-        return new File(parentDirectory).canRead();
+        try {
+            FileTransfer ft = new FileTransfer("test access.txt", FileTransfer.READ);
+            ft.delete();
+            return true;
+        } catch (IOException | UnknownIOModeException ex) {
+            return false;
+        }
     }
 
     /**
