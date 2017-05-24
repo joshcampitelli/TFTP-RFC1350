@@ -110,7 +110,12 @@ public class FileTransfer {
             FileTransfer ft = new FileTransfer("test access.txt", FileTransfer.READ);
             ft.delete();
             return true;
+
         } catch (IOException | UnknownIOModeException ex) {
+            if (ex instanceof FileNotFoundException) {
+                return true;
+            }
+            //ex.printStackTrace();
             return false;
         }
     }
