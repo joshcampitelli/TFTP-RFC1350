@@ -85,6 +85,25 @@ public class FileTransfer {
 
 
     /**
+     * Checks if the parent directory is writable.
+     *
+     * @return the write privileges of the parent directory
+     */
+    public static boolean isWritable() {
+        return new File(parentDirectory).canWrite();
+    }
+
+
+    /**
+     * Checks if the parent directory if readable.
+     *
+     * @return the read privileges of the parent directory
+     */
+    public static boolean isReadable() {
+        return new File(parentDirectory).canRead();
+    }
+
+    /**
      * Checks if the specified file is already existing.
      *
      * @param file the relative path to the file
