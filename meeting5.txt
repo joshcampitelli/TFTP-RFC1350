@@ -1,0 +1,36 @@
+24/05/2017
+
+
+SYSC3303 – Iteration 3 comments:
+Tests should be available in a runnable interface for the TA's to check the program is working, it must be flexible and personalized. The error simulator must require the user to enter information to add errors. TA's will not change the codes. 
+
+28/05/2017
+
+
+SYSC3303 – Meeting 5 for etiration:
+
+Meeting #5
+
+1. Work on error simulator to better suit the ta’s needs, including this fix: reading from an open file should not be allowed. Deal with error 2. The error simulator should open the file that is resquested to read or write and this is a prohibited action. Upcode 01 is for client (reading file). Upcode 02 is on the server (writing file). 
+2. Timing Diagrams.
+3. UML Diagrams and README.txt
+4. Error menu for all the errors to be selected – Iteration 3 update.
+5. Refactor the client and the connection classes (incorrect block #).
+6. Provide more documentation on the codee. 
+7. Provide test cases to be used.
+8. Add the timeout on the connection class,client and server. 
+9. Add the network errors.
+10. Fix the error simulator options for next Monday's demonstration based on Iteration 3: allow user to enter errors 4 and 5 with options and while loop to avoid opening again the simulator. 
+11. Deal with error 6. The error simulator should create a new file in the server or client's side, with the same name entered. 
+12. Check consistency of interfaces. 
+
+Josh: 5, 9, 8
+Ahmed K: 2, 4, 6
+Dario: 3, 10, 12
+Ahmed S: 4
+Brian: 
+
+
+
+
+
