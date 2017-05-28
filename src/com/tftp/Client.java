@@ -1,6 +1,5 @@
 package com.tftp;
 
-import java.io.File;
 import java.util.Scanner;
 
 import java.net.DatagramPacket;
@@ -10,6 +9,7 @@ import java.io.IOException;
 import com.tftp.core.SRSocket;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.TFTPError;
 import com.tftp.core.protocol.packets.*;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
@@ -85,10 +85,10 @@ public class Client extends SRSocket {
         DatagramPacket packet;
 
         if (requestType.toLowerCase().equals("r")){
-            packet = new RRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
+            packet = new RRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
 
             if (!FileTransfer.isWritable()) {
-                send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                send(new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram());
                 System.out.println("File Access Violation, Terminating Transfer.");
                 return;
             }
@@ -98,10 +98,10 @@ public class Client extends SRSocket {
             fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
-            packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).get();
+            packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
 
             if (!FileTransfer.isReadable()) {
-                send(new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get());
+                send(new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram());
                 System.out.println("File Access Violation, Terminating Transfer.");
                 return;
             }
@@ -167,13 +167,13 @@ public class Client extends SRSocket {
                 if (FileTransfer.getFreeSpace() < data.length) {
                     System.out.println("Disk Full or Allocation Exceeded, Terminating Transfer.");
                     fileTransfer.delete();
-                    send(new ERRORPacket(response, Packet.ERROR_DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).get());
+                    send(new ERRORPacket(response, TFTPError.DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).getDatagram());
                     return;
                 }
 
                 fileTransfer.write(data);
 
-                DatagramPacket ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).get();
+                DatagramPacket ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
                 ackPacket.setPort(serverPort);
 
                 inform(ackPacket, "Sending ACK Packet", true);
@@ -236,7 +236,7 @@ public class Client extends SRSocket {
 
             //Ensure the packet received from the server is of type ACK
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
-                DatagramPacket dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).get();
+                DatagramPacket dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
 
@@ -280,7 +280,7 @@ public class Client extends SRSocket {
 
             //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
             String errorMsg = "Incorrect Packet Received";
-            send(new ERRORPacket(response, Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).get());
+            send(new ERRORPacket(response, TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).getDatagram());
         }
     }
 

@@ -18,18 +18,8 @@ import java.util.Arrays;
 public abstract class Packet {
 
     private DatagramPacket packet;
-    public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN };
-    public static int DATA_SIZE = 516;
+    public enum PacketTypes { ACK, DATA, RRQ, WRQ, ERROR, UNKNOWN }
     public static int ACK_SIZE = 4;
-
-    public static final byte ERROR_NOT_DEFINED = 00;
-    public static final byte ERROR_FILE_NOT_FOUND = 01;
-    public static final byte ERROR_ACCESS_VIOLATION = 02;
-    public static final byte ERROR_DISK_FULL = 03;
-    public static final byte ERROR_ILLEGAL_TFTP_OPERATION = 04;
-    public static final byte ERROR_UNKNOWN_TRANSFER_ID = 05;
-    public static final byte ERROR_FILE_EXISTS = 06;
-    public static final byte ERROR_NO_SUCH_USER = 07;
 
     public Packet() {
     }
@@ -39,7 +29,7 @@ public abstract class Packet {
     }
 
 
-    public abstract DatagramPacket get();
+    public abstract DatagramPacket getDatagram();
 
     /**
      *

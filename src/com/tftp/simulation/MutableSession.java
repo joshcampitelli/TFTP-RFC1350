@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 
 import com.tftp.core.protocol.Packet;
 import com.tftp.core.SRSocket;
+import com.tftp.core.protocol.TFTPError;
 
 /**
  * MutableSession is similar to Connection for server sided requests. MutableSession allows the ErrorSimulator
@@ -75,9 +76,9 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private void mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
-        if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
+        if (modification.getErrorId() == TFTPError.UNKNOWN_TRANSFER_ID) {
             simulateInvalidTID(packet, destination);
-        } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
+        } else if (modification.getErrorId() == TFTPError.ILLEGAL_TFTP_OPERATION) {
             simulateIllegalTftpOperation(packet, modification, destination, sendOnly);
         }
     }

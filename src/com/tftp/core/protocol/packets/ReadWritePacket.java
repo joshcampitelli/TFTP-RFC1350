@@ -1,21 +1,11 @@
 package com.tftp.core.protocol.packets;
 
-import java.net.DatagramPacket;
 import com.tftp.core.protocol.Packet;
 
 public abstract class ReadWritePacket extends Packet {
 
-    private DatagramPacket packet;
-
-    public ReadWritePacket() {
-        super();
-    }
-
-    public ReadWritePacket(DatagramPacket packet) {
-        super(packet);
-    }
-
-    protected byte[] createRequest(byte rw, byte[] mode, byte[] filename) {
+    protected abstract byte[] form(byte[] mode, byte[] filename);
+    protected byte[] prepare(byte rw, byte[] mode, byte[] filename) {
         byte[] request = new byte[4 + mode.length + filename.length];
         int counter = 2; // filename starts at index 2
 

@@ -102,7 +102,7 @@ public class Connection extends SRSocket implements Runnable {
             setActive(false);
             return errorPacket; //Sends the error packet
         } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-            return new ERRORPacket(receivedPacket, Packet.ERROR_UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes()).get();
+            return new ERRORPacket(receivedPacket, TFTPError.UNKNOWN_TRANSFER_ID, "Unknown transfer ID".getBytes()).getDatagram();
         }
 
         if (Packet.getPacketType(receivedPacket) == Packet.PacketTypes.RRQ) {
@@ -124,16 +124,16 @@ public class Connection extends SRSocket implements Runnable {
 
         if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
             System.out.println("Invalid Request Received, File Does Not Exist.");
-            return new ERRORPacket(packet, Packet.ERROR_FILE_NOT_FOUND, ("File Not Found: " + filename).getBytes()).get();
+            return new ERRORPacket(packet, TFTPError.FILE_NOT_FOUND, ("File Not Found: " + filename).getBytes()).getDatagram();
         } else if (!FileTransfer.isReadable()) {
-            return new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get();
+            return new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram();
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
-        DatagramPacket temp = new DATAPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
+        DatagramPacket temp = new DATAPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
         dataBlock++;
 
         return temp;
@@ -144,12 +144,12 @@ public class Connection extends SRSocket implements Runnable {
         String filename = extractFilename(packet);
 
         if (!FileTransfer.isWritable()) {
-            return new ERRORPacket(packet, Packet.ERROR_ACCESS_VIOLATION, ("Access violation").getBytes()).get();
+            return new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram();
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
 
-        DatagramPacket temp =  new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
+        DatagramPacket temp =  new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
         ackBlock++;
 
         return temp;
@@ -160,7 +160,7 @@ public class Connection extends SRSocket implements Runnable {
         //Send Data from the file
         byte[] data = fileTransfer.read();
 
-        DatagramPacket temp = new DATAPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).get();
+        DatagramPacket temp = new DATAPacket(packet, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
 
         // shrink data array to amount of read bytes
         temp.setData(shrink(temp.getData(), fileTransfer.lastBlockSize() + 4));
@@ -175,12 +175,12 @@ public class Connection extends SRSocket implements Runnable {
 
         if (FileTransfer.getFreeSpace() < msg.length) {
             fileTransfer.delete(); //Deletes the Incomplete file from the server.
-            return new ERRORPacket(packet, Packet.ERROR_DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).get();
+            return new ERRORPacket(packet, TFTPError.DISK_FULL, ("Disk Full or Allocation Exceeded").getBytes()).getDatagram();
         }
 
         fileTransfer.write(msg);
 
-        DatagramPacket temp = new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).get();
+        DatagramPacket temp = new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
         ackBlock++;
         return temp;
     }

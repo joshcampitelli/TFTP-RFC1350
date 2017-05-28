@@ -1,6 +1,5 @@
 package com.tftp.core;
 
-import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -12,6 +11,7 @@ import com.tftp.Client;
 import com.tftp.Server;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.TFTPError;
 import com.tftp.core.protocol.packets.ERRORPacket;
 
 /**
@@ -157,20 +157,20 @@ public class SRSocket extends DatagramSocket {
         //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
         if (received.getPort() != expectedTID) { //Incorrect TID
             errorMsg = "Incorrect TID";
-            receivedPacket.set(Packet.ERROR_UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
-            errorPacket = receivedPacket.get();
+            receivedPacket.setDatagram(TFTPError.UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
+            errorPacket = receivedPacket.getDatagram();
         } else if (data.length > 516) {             //Error type 4: corrupt data
             errorMsg = "Data greater than 512";
-            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.get();
+            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.getDatagram();
         } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
             errorMsg = "Undefined OpCode";
-            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.get();
+            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.getDatagram();
         } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) != blockNumber) {
             errorMsg = "Incorrect Block Number";
-            receivedPacket.set(Packet.ERROR_ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.get();
+            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
+            errorPacket = receivedPacket.getDatagram();
         } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
             errorPacket = null;
         }

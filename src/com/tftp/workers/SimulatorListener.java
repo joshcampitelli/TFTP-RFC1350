@@ -1,6 +1,7 @@
 package com.tftp.workers;
 
 import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.TFTPError;
 import com.tftp.simulation.ErrorSimulator;
 
 /**
@@ -66,10 +67,10 @@ public class SimulatorListener extends Thread {
 
             // Request the user to enter a sub-type of error
             if (interrid == 5) {
-                errorId = Packet.ERROR_UNKNOWN_TRANSFER_ID;
+                errorId = TFTPError.UNKNOWN_TRANSFER_ID;
                 errorSubtype = ErrorSimulator.SIMULATE_NO_SPECIAL_ERROR;
-            } else if (interrid == 4) {
-                errorId = Packet.ERROR_ILLEGAL_TFTP_OPERATION;
+            } else {
+                errorId = TFTPError.ILLEGAL_TFTP_OPERATION;
                 // Request a sub-error to enter
                 System.out.println("You have chosen Error Packet 4. There are multiple ways to achieve it:");
                 System.out.println("\tINVALID_OPCODE (1)");
