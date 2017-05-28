@@ -4,10 +4,12 @@ import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Connection;
 import com.tftp.io.FileTransfer;
+import com.tftp.io.TransferController;
 import com.tftp.workers.QuitListener;
 import com.tftp.exceptions.InvalidPacketException;
 import java.net.SocketException;
@@ -25,15 +27,30 @@ import java.net.SocketException;
 public class Server extends SRSocket {
 
     private int threadNumber;
+    private TransferController controller;
     public static int RECEIVE_PORT = 69;
 	public static boolean verbose;
 
     public Server() throws IOException {
         super("Server, Socket 'R'", RECEIVE_PORT);
+        controller = new TransferController();
     }
 
 
+    /**
+     *
+     * @return the server's TransferController instance.
+     */
+    public TransferController getTransferController() {
+        return controller;
+    }
 
+
+    /**
+     * Prints instructions on the console and retrieves input from the user.
+     *
+     * @return the new-line terminated input
+     */
     public String getInput(String text) {
     	 Scanner scanner = new Scanner(System.in);
     	 System.out.printf(text);
@@ -48,7 +65,7 @@ public class Server extends SRSocket {
      * @throws InvalidPacketException If the packet has been found to be illegal. Critical error.
      */
     public void establish(DatagramPacket packet) throws IOException {
-        Connection connection = new Connection(packet);
+        Connection connection = new Connection(this, packet);
         Thread thread = new Thread(connection, "Connection" + threadNumber++);
         thread.start();
 
