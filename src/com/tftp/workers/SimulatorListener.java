@@ -1,6 +1,6 @@
 package com.tftp.workers;
 
-import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.Packet.PacketTypes;
 import com.tftp.core.protocol.TFTPError;
 import com.tftp.simulation.ErrorSimulator;
 
@@ -24,34 +24,50 @@ public class SimulatorListener extends Thread {
 
     @Override
     public void run() {
-        Packet.PacketTypes pcktyp;
+        PacketTypes pcktyp = PacketTypes.UNKNOWN;
         byte errorSubtype = 0;
         byte errorId = 0;
         String errsubStr;
+        int block = -1;
 
         while (true) {
             // Request the user to enter the type of packet to modify
-            System.out.println("There are two types of modifiable packets:");
+            System.out.println("There are four types of modifiable packets:");
+            System.out.println("\tRRQ (R)");
+            System.out.println("\tWRQ (W)");
             System.out.println("\tDATA (D)");
             System.out.println("\tACK (A)");
+
             String packetType = simulator.getInput("By typing the initial, which one would you like to modify? ");
-            while (!packetType.toLowerCase().equals("d") && !packetType.toLowerCase().equals("a")) {
+            while (!packetType.toUpperCase().equals("D") &&
+                        !packetType.toUpperCase().equals("A") &&
+                        !packetType.toUpperCase().equals("R") &&
+                        !packetType.toUpperCase().equals("W")) {
                 packetType = simulator.getInput("By typing the initial, which one would you like to modify? ");
             }
 
-            // Organize the data type
-            if (packetType.toLowerCase().equals("a")) {
-                pcktyp = Packet.PacketTypes.ACK;
-            } else {
-                pcktyp = Packet.PacketTypes.DATA;
+            switch (packetType.toUpperCase()) {
+                case "R":
+                    pcktyp = PacketTypes.RRQ;
+                    break;
+                case "W":
+                    pcktyp = PacketTypes.WRQ;
+                    break;
+                case "D":
+                    pcktyp = PacketTypes.DATA;
+                    break;
+                case "A":
+                    pcktyp = PacketTypes.ACK;
+                    break;
             }
 
-            // Request the user to enter the block number to modify
-            String blockNumber = simulator.getInput("Enter the block number of the packet to modify: ");
-            int intblck = Integer.parseInt(blockNumber);
-            while (intblck < 0 || intblck > 65000) {
-                blockNumber = simulator.getInput("Enter the block number of the packet to modify: ");
-                intblck = Integer.parseInt(blockNumber);
+            if (pcktyp == PacketTypes.DATA || pcktyp == PacketTypes.ACK) {
+                String blockNumber = simulator.getInput("Enter the block number of the packet to modify: ");
+                block = Integer.parseInt(blockNumber);
+                while (block < 0 || block > 65000) {
+                    blockNumber = simulator.getInput("Enter the block number of the packet to modify: ");
+                    block = Integer.parseInt(blockNumber);
+                }
             }
 
             // Request the user to enter the error 4 to 5 to produce in the packet
@@ -76,9 +92,10 @@ public class SimulatorListener extends Thread {
                 System.out.println("\tINVALID_OPCODE (1)");
                 System.out.println("\tINVALID_PACKET_SIZE (2)");
                 System.out.println("\tINVALID_BLOCK_NUMBER (3)");
+                System.out.println("\tINVALID_MODE (4)");
 
                 errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
-                while (Integer.valueOf(errsubStr) < 1 && Integer.valueOf(errsubStr) > 3) {
+                while (Integer.valueOf(errsubStr) < 1 && Integer.valueOf(errsubStr) > 4) {
                     errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
                 }
 
@@ -86,7 +103,7 @@ public class SimulatorListener extends Thread {
             }
 
             // Execute the simulator
-            System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(intblck, pcktyp, errorId, errorSubtype));
+            System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(block, pcktyp, errorId, errorSubtype));
         }
     }
 }
