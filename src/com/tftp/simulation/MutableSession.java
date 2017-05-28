@@ -75,8 +75,6 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private void mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
-        System.out.printf("[IMPORTANT] %s: %s\n", getName(), modification);
-
         if (modification.getErrorId() == Packet.ERROR_UNKNOWN_TRANSFER_ID) {
             simulateInvalidTID(packet, destination);
         } else if (modification.getErrorId() == Packet.ERROR_ILLEGAL_TFTP_OPERATION) {
@@ -117,20 +115,20 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest, boolean sendOnly) throws IOException {
         switch (modification.getErrorType()) {
-            case Packet.SIMULATOR_INVALID_OPCODE:
+            case ErrorSimulator.SIMULATE_INVALID_OPCODE:
 
                 // corrupt the opcode, random number above the last legal opcode (i.e. >5)
                 packet.getData()[1] = (byte) (Math.random() * 100 + 6);
                 break;
 
-            case Packet.SIMULATOR_INVALID_PACKET_SIZE:
+            case ErrorSimulator.SIMULATE_INVALID_PACKET_SIZE:
 
                 // change the array size to more than 512
                 byte[] arr = enlarge(packet.getData(), (int) (Math.random() * 512 + 512));
                 packet.setData(arr);
                 break;
 
-            case Packet.SIMULATOR_INVALID_BLOCK_NUMBER:
+            case ErrorSimulator.SIMULATE_INVALID_BLOCK_NUMBER:
 
                 // corrupt the block number, choose a random byte
                 packet.getData()[2] = (byte) (Math.random() * 256);
@@ -169,7 +167,7 @@ public class MutableSession extends SRSocket implements Runnable {
             int dest = this.dest;
 
             while (true) {
-                DatagramPacket packet = receive(1000);
+                DatagramPacket packet = receive(5000);
                 inform(packet, "Received Packet");
 
                 if (simulator.isTargetPacket(packet)) {
@@ -182,8 +180,8 @@ public class MutableSession extends SRSocket implements Runnable {
 
                 dest = (dest == this.dest) ? this.source : this.dest;
             }
-        } catch (SocketTimeoutException e) {
-            System.out.println("[IMPORTANT] No packet received in 1000 ms. Terminating!");
+        } catch (SocketTimeoutException ex) {
+            // socket timed out, thread will die. No need to inform.
         } catch (IOException e) {
             e.printStackTrace();
         }

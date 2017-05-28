@@ -31,11 +31,6 @@ public abstract class Packet {
     public static final byte ERROR_FILE_EXISTS = 06;
     public static final byte ERROR_NO_SUCH_USER = 07;
 
-    public static final byte SIMULATOR_NO_SPECIAL_ERROR = 00;
-    public static final byte SIMULATOR_INVALID_OPCODE = 01;
-    public static final byte SIMULATOR_INVALID_PACKET_SIZE = 02;
-    public static final byte SIMULATOR_INVALID_BLOCK_NUMBER = 03;
-
     public Packet() {
     }
 

@@ -3,11 +3,12 @@ package com.tftp.simulation;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.LinkedList;
-
+import java.util.Scanner;
 import java.io.IOException;
 import com.tftp.core.SRSocket;
 import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.Packet.PacketTypes;
+import com.tftp.workers.SimulatorListener;
 
 /**
  * ErrorSimulator aids in testing the rigidty and robustness of the transfer protocol implemented between
@@ -27,6 +28,10 @@ public class ErrorSimulator extends SRSocket {
 
     private static int RECEIVE_PORT = 23;
     private final LinkedList<PacketModification> modifications;
+    public static final byte SIMULATE_NO_SPECIAL_ERROR = 00;
+    public static final byte SIMULATE_INVALID_OPCODE = 01;
+    public static final byte SIMULATE_INVALID_PACKET_SIZE = 02;
+    public static final byte SIMULATE_INVALID_BLOCK_NUMBER = 03;
 
     /**
      * Constructs the ErrorSimulator by initializing the main receive socket (listening on port 23) and the
@@ -49,7 +54,11 @@ public class ErrorSimulator extends SRSocket {
         return new DatagramPacket(packet.getData(), packet.getLength(), address, port);
     }
 
-
+    public String getInput(String text) {
+      	 Scanner scanner = new Scanner(System.in);
+      	 System.out.printf(text);
+      	 return scanner.nextLine();
+      }
 
 
     /**
@@ -62,7 +71,7 @@ public class ErrorSimulator extends SRSocket {
      * @param type The type of packet it must be to be considered for modification
      * @param errorType The type of error packet to produce from the modification
      */
-    public void queueModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
+    public PacketModification queueModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
         PacketModification modification = new PacketModification();
         modification.setPacketParameters(blocknumber, type);
         modification.setErrorId(errorId);
@@ -71,6 +80,8 @@ public class ErrorSimulator extends SRSocket {
         synchronized (modifications) {
             this.modifications.add(modification);
         }
+
+        return modification;
     }
 
 
@@ -126,23 +137,11 @@ public class ErrorSimulator extends SRSocket {
     public static void main(String[] args) {
         try {
             ErrorSimulator simulator = new ErrorSimulator();
-            simulator.presetModifications();
+            new SimulatorListener(simulator).start();
+
             simulator.simulate();
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * A preset for modifications to be added to the Packet Modifications list.
-     * IMPORTANT: add and remove as many as you want while testing.
-     */
-    public void presetModifications() {
-        queueModification(3, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_OPCODE);
-        queueModification(7, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_BLOCK_NUMBER);
-        queueModification(15, PacketTypes.DATA, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_PACKET_SIZE);
-        queueModification(23, PacketTypes.ACK, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.SIMULATOR_NO_SPECIAL_ERROR);
-        queueModification(29, PacketTypes.ACK, Packet.ERROR_ILLEGAL_TFTP_OPERATION, Packet.SIMULATOR_INVALID_BLOCK_NUMBER);
-        queueModification(222, PacketTypes.DATA, Packet.ERROR_UNKNOWN_TRANSFER_ID, Packet.SIMULATOR_NO_SPECIAL_ERROR);
     }
 }
