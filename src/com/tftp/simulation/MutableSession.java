@@ -55,9 +55,13 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException {
-        DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
-        inform(server, "Sending Packet");
-        send(server);
+        if (simulator.isTargetPacket(client)) {
+            mutate(client, simulator.dequeue(), SERVER_PORT, false);
+        } else {
+            DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
+            inform(server, "Sending Packet");
+            send(server);
+        }
 
         DatagramPacket response = receive();
         inform(response, "Received Packet");
@@ -134,6 +138,12 @@ public class MutableSession extends SRSocket implements Runnable {
                 // corrupt the block number, choose a random byte
                 packet.getData()[2] = (byte) (Math.random() * 256);
                 packet.getData()[3] = (byte) (Math.random() * 256);
+                break;
+            case ErrorSimulator.SIMULATE_INVALID_MODE:
+
+                // corrupt the mode by just changing the last mode byte to a random one
+                // effectively making it not "octet"
+                packet.getData()[packet.getLength() - 2] = (byte) (Math.random() * 256);
                 break;
         }
 

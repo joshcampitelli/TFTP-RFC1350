@@ -32,6 +32,7 @@ public class ErrorSimulator extends SRSocket {
     public static final byte SIMULATE_INVALID_OPCODE = 01;
     public static final byte SIMULATE_INVALID_PACKET_SIZE = 02;
     public static final byte SIMULATE_INVALID_BLOCK_NUMBER = 03;
+    public static final byte SIMULATE_INVALID_MODE = 04;
 
     /**
      * Constructs the ErrorSimulator by initializing the main receive socket (listening on port 23) and the

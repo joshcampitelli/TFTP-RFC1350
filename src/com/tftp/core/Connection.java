@@ -53,26 +53,26 @@ public class Connection extends SRSocket implements Runnable {
         this.active = active;
     }
 
-    //extractFilename method only gets called once a RRQ or WRQ Packet has arrived on the server
-    //The method extracts the filename from the data portion of the packet
-    private String extractFilename(DatagramPacket packet) {
-        byte[] file = new byte[100];
-        int len = 0;
 
-        //Loop through the data, starting at index position 2 (surpassing the opcode)
-        for(int i = 2; i < packet.getData().length; i++) {
-            //If byte is 0 break, since the filename is enclosed with 0's
-            if(packet.getData()[i] == 0) {
-                break;
-            } else {
-                file[i - 2] = packet.getData()[i];
-                len++;
-            }
-        }
+    /**
+     * Extracts the RRQ/WRQ parameters. (i.e. filename, mode)
+     *
+     * @param packet The DatagramPacket holding the RRQ/WRQ request
+     *
+     * @return a String array of length 2, where:
+     *         index 0 is always filename, index 1 is always mode.
+     */
+    private String[] extractTransferParameters(DatagramPacket packet) {
+        String[] parameters = new String[2];
+        String data = new String(packet.getData()).substring(2);
+        int delimiter = data.indexOf((char) ((byte) 0));
 
-        file = shrink(file, len);
-        return new String(file);
+        // filename and mode, respectively
+        parameters[0] = data.substring(0, delimiter);
+        parameters[1] = data.substring(delimiter + 1, data.length() - 1);
+        return parameters;
     }
+
 
     //Removes the opcode & block number (first 4 bytes) from the data
     //used only for DATA Packets
@@ -97,7 +97,7 @@ public class Connection extends SRSocket implements Runnable {
         } else {
             errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
         }
-        
+
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
             setActive(false);
             return errorPacket; //Sends the error packet
@@ -114,13 +114,19 @@ public class Connection extends SRSocket implements Runnable {
         } else if (Packet.getPacketType(receivedPacket) == Packet.PacketTypes.DATA) {
             return dataReceived(receivedPacket);
         } else {
-            throw new InvalidPacketException("Illegal data buffer!!!");
+            throw new InvalidPacketException("Illegal packet parsed!!!");
         }
     }
 
     //Read Request Received initializes the FileTransfer for mode READ, and sends DATA1 Packet
     private DatagramPacket rrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        String filename = extractFilename(packet);
+        String[] parameters = extractTransferParameters(packet);
+        String filename = parameters[0];
+        String mode = parameters[1];
+
+        if (!mode.equalsIgnoreCase("octet")) {
+            return new ERRORPacket(packet, TFTPError.ILLEGAL_TFTP_OPERATION, "Illegal mode for RRQ".getBytes()).getDatagram();
+        }
 
         if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
             System.out.println("Invalid Request Received, File Does Not Exist.");
@@ -141,7 +147,13 @@ public class Connection extends SRSocket implements Runnable {
 
     //Write Request Received initializes the FileTransfer for mode WRITE, then sends ACK0 Packet
     private DatagramPacket wrqReceived(DatagramPacket packet) throws UnknownIOModeException, IOException {
-        String filename = extractFilename(packet);
+        String[] parameters = extractTransferParameters(packet);
+        String filename = parameters[0];
+        String mode = parameters[1];
+
+        if (!mode.equalsIgnoreCase("octet")) {
+            return new ERRORPacket(packet, TFTPError.ILLEGAL_TFTP_OPERATION, "Illegal mode for WRQ".getBytes()).getDatagram();
+        }
 
         if (!FileTransfer.isWritable()) {
             return new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram();

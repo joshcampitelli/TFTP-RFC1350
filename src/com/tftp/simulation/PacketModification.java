@@ -76,9 +76,12 @@ public class PacketModification {
      *          false   otherwise
      */
     public boolean isMatchingPacket(DatagramPacket target) {
-        int blocknum = BlockNumber.getBlockNumber(target.getData());
-
-        return Packet.getPacketType(target) == packetType && blocknum == blockNumber;
+        if (packetType == PacketTypes.RRQ || packetType == PacketTypes.WRQ) {
+            return Packet.getPacketType(target) == packetType;
+        } else {
+            int blocknum = BlockNumber.getBlockNumber(target.getData());
+            return Packet.getPacketType(target) == packetType && blocknum == blockNumber;
+        }
     }
 
     @Override
