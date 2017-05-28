@@ -1,5 +1,6 @@
 package com.tftp.core;
 
+import com.tftp.Server;
 import com.tftp.core.protocol.*;
 import com.tftp.core.protocol.packets.ACKPacket;
 import com.tftp.core.protocol.packets.DATAPacket;
@@ -24,14 +25,16 @@ import java.io.IOException;
 public class Connection extends SRSocket implements Runnable {
 
     private DatagramPacket request;
+    private Server server;
     private int TID, clientTID;
     private FileTransfer fileTransfer;
     private int ackBlock = 0;
     private int dataBlock = 1;
     private boolean active = true;
 
-    public Connection(DatagramPacket packet) throws IOException {
+    public Connection(Server server, DatagramPacket packet) throws IOException {
         super(String.format("Connection (Client TID: %d)", packet.getPort()));
+        this.server = server;
         this.request = packet;
         this.TID = getPort();
         this.clientTID = packet.getPort();
@@ -131,11 +134,13 @@ public class Connection extends SRSocket implements Runnable {
         if (!FileTransfer.isFileExisting(filename)) {//File Does Not Exist
             System.out.println("Invalid Request Received, File Does Not Exist.");
             return new ERRORPacket(packet, TFTPError.FILE_NOT_FOUND, ("File Not Found: " + filename).getBytes()).getDatagram();
-        } else if (!FileTransfer.isReadable()) {
+        } else if (!FileTransfer.isReadable() || server.getTransferController().isFileLocked(filename)) {
             return new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram();
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.READ);
+        server.getTransferController().registerTransfer(fileTransfer);
+
         byte[] data = fileTransfer.read();
         data = shrink(data, fileTransfer.lastBlockSize());
 
@@ -160,6 +165,7 @@ public class Connection extends SRSocket implements Runnable {
         }
 
         fileTransfer = new FileTransfer(filename, FileTransfer.WRITE);
+        server.getTransferController().registerTransfer(fileTransfer);
 
         DatagramPacket temp =  new ACKPacket(packet, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
         ackBlock++;
@@ -221,6 +227,7 @@ public class Connection extends SRSocket implements Runnable {
 
         // transfer complete
         if (fileTransfer != null && fileTransfer.isComplete()) {
+            server.getTransferController().deregisterTransfer(fileTransfer);
             setActive(false);
         }
     }

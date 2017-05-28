@@ -231,6 +231,15 @@ public class FileTransfer {
 
 
     /**
+     *
+     * @return The name of the file.
+     */
+    public String getFileName() {
+        return file.getName();
+    }
+    
+
+    /**
      * Checks if the stream is still open. A stream will only remain open as long as the last block
      * is yet to be detected.
      */
@@ -238,9 +247,26 @@ public class FileTransfer {
         return stream == null;
     }
 
+
+    /**
+     * Checks if this instance of FileTransfer owns the exclusive right to hold the file lock.
+     *
+     * @return  true    if there is an active READ (FileInputStream) on the file
+     *          false   otherwise
+     */
+    public boolean hasFileLock() {
+        return !isComplete() && stream instanceof FileInputStream;
+    }
+
+
+    /**
+     *
+     * @return the amount of bytes read in the last read or write.
+     */
     public int lastBlockSize() {
         return lastBlockSize;
     }
+
 
     /**
      * Initializes the class by constructing the instance variable ("stream") with the correct subclass.
