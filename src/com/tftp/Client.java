@@ -174,7 +174,7 @@ public class Client extends SRSocket {
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
             } else {
-                errorReceived(response);
+                troubleshoot(response);
                 System.out.println("Terminating Client...");
                 break;
             }
@@ -233,7 +233,7 @@ public class Client extends SRSocket {
                 send(dataPacket);
                 dataBlock++;
             } else {
-                errorReceived(response);
+                troubleshoot(response);
                 System.out.println("Terminating Client...");
 
                 break;
@@ -263,29 +263,17 @@ public class Client extends SRSocket {
         //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
         DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
         if (temp != null) {
-            errorDetected(temp);
             if (temp.getData()[3] == 4) {
+                System.out.println("Terminating Client...");
+                inform(temp, "Sending Error Packet: ");
+                send(temp);
                 return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
             } else {
+                System.out.println("Ignoring Packet, Continuing Execution.");
                 return ErrorStatus.NON_FATAL_ERROR; //Non-Fatal Error Detected (Error Code: 05)
             }
         } else {
             return ErrorStatus.NO_ERROR;
-        }
-    }
-
-    /**
-     * Troubleshoots the abnormal packets detected by the Client.
-     *
-     * @param errorPacket the abnormal DatagramPacket
-     * @throws IOException
-     */
-    private void errorDetected(DatagramPacket errorPacket) throws IOException {
-        if (errorPacket.getData()[3] == 4) {
-            errorReceived(errorPacket);
-            System.out.println("Terminating Client...");
-        } else if (errorPacket.getData()[3] == 5) {
-            System.out.println("Ignoring Packet, Continuing Execution.");
         }
     }
 
@@ -295,7 +283,7 @@ public class Client extends SRSocket {
      * @param errorPacket the abnormal DatagramPacket
      * @throws IOException
      */
-    private void errorReceived(DatagramPacket errorPacket) throws IOException {
+    private void troubleshoot(DatagramPacket errorPacket) throws IOException {
         if (Packet.getPacketType(errorPacket) == Packet.PacketTypes.ERROR) {
             byte[] errorMsg = new byte[errorPacket.getLength() - 4];
             System.arraycopy(errorPacket.getData(), 4, errorMsg, 0, errorPacket.getData().length - 4);
