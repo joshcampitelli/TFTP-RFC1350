@@ -153,10 +153,7 @@ public class Client extends SRSocket {
                 break;
             } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
                 System.out.println("Ignoring Packet, Continuing Execution.");
-                continue;
-            }
-
-            if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
+            } else if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
                 ackBlock++;
 
                 // unpack the data portion and write it to the file
