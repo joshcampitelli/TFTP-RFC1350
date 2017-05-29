@@ -35,6 +35,7 @@ public class Client extends SRSocket {
     private boolean isNormal = true;
     private FileTransfer fileTransfer;
     private int connectionTID;
+    private enum ErrorStatus {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR}
 
     public Client() throws IOException {
         super("Client");
@@ -140,21 +141,15 @@ public class Client extends SRSocket {
             inform(response, "Packet Received", true);
 
             if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
-                //Parses Received Data Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
-                DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
-                if (errorPacket != null) {
-                    errorDetected(errorPacket);
-                    if (errorPacket.getData()[3] == 4) {
-                        break;    //Fatal Error Detected (Error Code: 04)
-                    } else {
-                        if (fileTransfer.isComplete()) {
-                            break;
-                        }
+                ErrorStatus status = checkPacket(response, this.connectionTID, ackBlock + 1);
+                if (status == ErrorStatus.FATAL_ERROR) {
+                    break;
+                } else if (status == ErrorStatus.NON_FATAL_ERROR) {
+                    if (fileTransfer.isComplete())
+                        break;
 
-                        response = receive();
-                        inform(response,"From Server");
-                        continue; //Non-fatal Error Detected
-                    }
+                    response = receive();
+                    continue;
                 }
 
                 ackBlock++;
@@ -219,15 +214,15 @@ public class Client extends SRSocket {
 
             //Ensure the packet received from the server is of type ACK
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
-                //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
-                DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
-                if (errorPacket != null) {
-                    errorDetected(errorPacket);
-                    if (errorPacket.getData()[3] == 4) {
-                        break;    //Fatal Error Detected (Error Code: 04)
-                    } else {
-                        continue; //Non-fatal Error Detected
-                    }
+                ErrorStatus status = checkPacket(response, this.connectionTID, dataBlock - 1);
+                if (status == ErrorStatus.FATAL_ERROR) {
+                    break;
+                } else if (status == ErrorStatus.NON_FATAL_ERROR) {
+                    if (fileTransfer.isComplete())
+                        break;
+
+                    response = receive();
+                    continue;
                 }
 
                 DatagramPacket dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
@@ -252,6 +247,31 @@ public class Client extends SRSocket {
         }
 
         System.out.println("[IMPORTANT] Transfer complete!");
+    }
+
+    /**
+     * The checkPacket method calls the parseUnknownPacket on SRSocket which detects packet errors, this method then
+     * determines whether there was an error and returns the type. It also makes a call to the errorDetected method.
+     *
+     * @param received the DatagramPacket which is being tested for errors.
+     * @param expectedTID the expected value for the TID.
+     * @param blockNumber the expected value for the Block Number.
+     * @return ErrorStatus enum {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR}
+     * @throws IOException
+     */
+    private ErrorStatus checkPacket(DatagramPacket received, int expectedTID, int blockNumber) throws IOException {
+        //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
+        DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
+        if (temp != null) {
+            errorDetected(temp);
+            if (temp.getData()[3] == 4) {
+                return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
+            } else {
+                return ErrorStatus.NON_FATAL_ERROR; //Non-Fatal Error Detected (Error Code: 05)
+            }
+        } else {
+            return ErrorStatus.NO_ERROR;
+        }
     }
 
     /**
