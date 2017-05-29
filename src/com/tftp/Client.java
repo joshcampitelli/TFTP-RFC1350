@@ -119,7 +119,6 @@ public class Client extends SRSocket {
         }
     }
 
-
     /**
      * Completes the read (RRQ) cycle that has been requested by the operator.
      * Ideally, ACK packets are sent to the destination and DATA packets are received from the destination until
@@ -140,20 +139,24 @@ public class Client extends SRSocket {
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
 
-            if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
-                troubleshoot(response);
-                break;
-            }
+            if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
+                //Parses Received Data Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
+                DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
+                if (errorPacket != null) {
+                    errorDetected(errorPacket);
+                    if (errorPacket.getData()[3] == 4) {
+                        break;    //Fatal Error Detected (Error Code: 04)
+                    } else {
+                        if (fileTransfer.isComplete()) {
+                            break;
+                        }
 
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, ackBlock + 1);
-            if (errorPacket != null && errorPacket.getData()[3] == 4) {
-                inform(errorPacket, "Sending Packet");
-                send(errorPacket);
-                System.out.println("Terminating Client...");
-                break;
-            } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-                System.out.println("Ignoring Packet, Continuing Execution.");
-            } else if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
+                        response = receive();
+                        inform(response,"From Server");
+                        continue; //Non-fatal Error Detected
+                    }
+                }
+
                 ackBlock++;
 
                 // unpack the data portion and write it to the file
@@ -176,9 +179,8 @@ public class Client extends SRSocket {
                 inform(ackPacket, "Sending ACK Packet", true);
                 send(ackPacket);
             } else {
-                troubleshoot(response);
+                errorReceived(response);
                 System.out.println("Terminating Client...");
-
                 break;
             }
 
@@ -215,24 +217,19 @@ public class Client extends SRSocket {
             inform(response, "Packet Received", true);
             byte[] data = fileTransfer.read();
 
-            if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
-                troubleshoot(response);
-                break;
-            }
-
-            DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
-            if (errorPacket != null && errorPacket.getData()[3] == 4) {
-                send(errorPacket);
-                System.out.println("Terminating Client...");
-                break;
-            } else if (errorPacket != null && errorPacket.getData()[3] == 5) {
-                send(errorPacket);
-                System.out.println("Ignoring Packet, Continuing Execution.");
-                continue;
-            }
-
             //Ensure the packet received from the server is of type ACK
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
+                //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
+                DatagramPacket errorPacket = parseUnknownPacket(response, this.connectionTID, dataBlock - 1);
+                if (errorPacket != null) {
+                    errorDetected(errorPacket);
+                    if (errorPacket.getData()[3] == 4) {
+                        break;    //Fatal Error Detected (Error Code: 04)
+                    } else {
+                        continue; //Non-fatal Error Detected
+                    }
+                }
+
                 DatagramPacket dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
@@ -241,7 +238,7 @@ public class Client extends SRSocket {
                 send(dataPacket);
                 dataBlock++;
             } else {
-                troubleshoot(response);
+                errorReceived(response);
                 System.out.println("Terminating Client...");
 
                 break;
@@ -257,27 +254,41 @@ public class Client extends SRSocket {
         System.out.println("[IMPORTANT] Transfer complete!");
     }
 
+    /**
+     * Troubleshoots the abnormal packets detected by the Client.
+     *
+     * @param errorPacket the abnormal DatagramPacket
+     * @throws IOException
+     */
+    private void errorDetected(DatagramPacket errorPacket) throws IOException {
+        if (errorPacket.getData()[3] == 4) {
+            errorReceived(errorPacket);
+            System.out.println("Terminating Client...");
+        } else if (errorPacket.getData()[3] == 5) {
+            System.out.println("Ignoring Packet, Continuing Execution.");
+        }
+    }
 
     /**
      * Troubleshoots the response received for the abnormality.
      *
-     * @param response the abnormal DatagramPacket
+     * @param errorPacket the abnormal DatagramPacket
      * @throws IOException
      */
-    private void troubleshoot(DatagramPacket response) throws IOException {
-        if (Packet.getPacketType(response) == Packet.PacketTypes.ERROR) {
-            byte[] errorMsg = new byte[response.getLength() - 4];
-            System.arraycopy(response.getData(), 4, errorMsg, 0, response.getData().length - 4);
-            System.out.println("Error Packet Received: Error Code: 0" + response.getData()[3] + ", Error Message: " + new String(errorMsg));
+    private void errorReceived(DatagramPacket errorPacket) throws IOException {
+        if (Packet.getPacketType(errorPacket) == Packet.PacketTypes.ERROR) {
+            byte[] errorMsg = new byte[errorPacket.getLength() - 4];
+            System.arraycopy(errorPacket.getData(), 4, errorMsg, 0, errorPacket.getData().length - 4);
+            System.out.println("Error Packet Received: Error Code: 0" + errorPacket.getData()[3] + ", Error Message: " + new String(errorMsg));
 
-            if (response.getData()[3] == 1) //File Not Found Error
+            if (errorPacket.getData()[3] == 1) //File Not Found Error
                 fileTransfer.delete();
 
         } else {
 
             //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
             String errorMsg = "Incorrect Packet Received";
-            send(new ERRORPacket(response, TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).getDatagram());
+            send(new ERRORPacket(errorPacket, TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).getDatagram());
         }
     }
 
