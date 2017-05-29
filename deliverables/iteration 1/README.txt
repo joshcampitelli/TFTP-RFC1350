@@ -19,11 +19,11 @@ Students (by alphabetical order):
 
 Breakdown of responsibilities:
 ------------------------------
-Josh Campitelli: Helped with the design, writing, and debugging of the project, specifically the handling of packets in the Client and Connection Classes.
+Josh Campitelli: Helped with the design, writing, and debugging of the project, specifically the handling of packets in the Client and Connection classes.
 Ahmed Khattab: Worked towards the overall progress of the project including the shutting down of the server and created the UMC and UML diagrams. 
-Dario Luzuriaga: Contributed writing the README.txt instructions, reviewing code and suggesting the users’ interaction with the program. 
-Ahmed Sakr:
-Brian Zhang:
+Dario Luzuriaga: Helped work towards the completion of the project, the debugging, and the instructions.
+Ahmed Sakr: Provided the base code for the project from assignment 1 and helped build and design the protocol and classes of the project.
+Brian Zhang: Help build project modularity including constructing the packet class and debugged errors. Worked on logical problems and instructed team members on version control.
 
 Introduction:
 -------------
