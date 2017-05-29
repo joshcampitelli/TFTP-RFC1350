@@ -23,17 +23,19 @@ public class SimulatorListener extends Thread {
     }
 
     private PacketTypes getPacketType() {
-        System.out.println("There are four types of modifiable packets:");
+        System.out.println("There are five types of modifiable packets:");
         System.out.println("\tRRQ (R)");
         System.out.println("\tWRQ (W)");
         System.out.println("\tDATA (D)");
         System.out.println("\tACK (A)");
+        System.out.println("\tError (E)");
 
         String packetType = simulator.getInput("By typing the initial, which one would you like to modify? ");
         while (!packetType.toUpperCase().equals("D") &&
                     !packetType.toUpperCase().equals("A") &&
                     !packetType.toUpperCase().equals("R") &&
-                    !packetType.toUpperCase().equals("W")) {
+                    !packetType.toUpperCase().equals("W") &&
+                    !packetType.toUpperCase().equals("E")) {
             packetType = simulator.getInput("By typing the initial, which one would you like to modify? ");
         }
 
@@ -46,6 +48,8 @@ public class SimulatorListener extends Thread {
                 return PacketTypes.DATA;
             case "A":
                 return PacketTypes.ACK;
+            case "E":
+                return PacketTypes.ERROR;
             default:
                 return PacketTypes.UNKNOWN;
         }
@@ -64,10 +68,12 @@ public class SimulatorListener extends Thread {
         return 0;
     }
 
-    private byte getErrorId() {
-        System.out.println("The Error Simulator supports the following ERROR packets:");
+    private byte getErrorId(PacketTypes type) {
+        System.out.println("The Error Simulator supports the following ERROR packets for your chosen packet type:");
         System.out.println("\tIllegal TFTP Operation (4)");
-        System.out.println("\tInvalid TID (5)");
+        if (!isInitiatingRequest(type)) {
+            System.out.println("\tInvalid TID (5)");
+        }
 
         int id = Integer.parseInt(simulator.getInput("By typing the numbered index, which one would you like to choose? "));
         while (id != 4 && id != 5) {
@@ -81,15 +87,21 @@ public class SimulatorListener extends Thread {
         }
     }
 
-    private byte getErrorType(byte errorId) {
+
+    private byte getErrorType(PacketTypes type, byte errorId) {
         if (errorId == TFTPError.UNKNOWN_TRANSFER_ID) {
             return ErrorSimulator.SIMULATE_NO_SPECIAL_ERROR;
         } else {
             System.out.println("You have chosen Error Packet 4. There are multiple ways to achieve it:");
             System.out.println("\tINVALID_OPCODE (1)");
             System.out.println("\tINVALID_PACKET_SIZE (2)");
-            System.out.println("\tINVALID_BLOCK_NUMBER (3)");
-            System.out.println("\tINVALID_MODE (4)");
+            
+            if (isBlockNumberRequest(type)) {
+                System.out.println("\tINVALID_BLOCK_NUMBER (3)");
+            }
+            if (isInitiatingRequest(type)) {
+                System.out.println("\tINVALID_MODE (4)");
+            }
 
             String errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
             while (Integer.valueOf(errsubStr) < 1 && Integer.valueOf(errsubStr) > 4) {
@@ -100,13 +112,23 @@ public class SimulatorListener extends Thread {
         }
     }
 
+
+    private boolean isInitiatingRequest(PacketTypes type) {
+        return type == PacketTypes.RRQ || type == PacketTypes.WRQ;
+    }
+
+    private boolean isBlockNumberRequest(PacketTypes type) {
+        return type == PacketTypes.DATA || type == PacketTypes.ACK;
+    }
+
+
     @Override
     public void run() {
         while (true) {
             PacketTypes packetType = getPacketType();
             int block = getBlockNumber(packetType);
-            byte errorId = getErrorId();
-            byte errorType = getErrorType(errorId);
+            byte errorId = getErrorId(packetType);
+            byte errorType = getErrorType(packetType, errorId);
 
             // Queue the modification
             System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(block, packetType, errorId, errorType));
