@@ -263,10 +263,10 @@ public class Client extends SRSocket {
         //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
         DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
         if (temp != null) {
+            inform(temp, "Sending Error Packet");
+            send(temp);
             if (temp.getData()[3] == 4) {
                 System.out.println("Terminating Client...");
-                inform(temp, "Sending Error Packet: ");
-                send(temp);
                 return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
             } else {
                 System.out.println("Ignoring Packet, Continuing Execution.");
