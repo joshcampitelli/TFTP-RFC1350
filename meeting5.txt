@@ -28,7 +28,7 @@ Josh: 5, 9, 8
 Ahmed K: 2, 4, 6
 Dario: 3, 10, 12
 Ahmed S: 4
-Brian: 
+Brian: 1, 11
 
 
 
