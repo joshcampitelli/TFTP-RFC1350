@@ -293,9 +293,11 @@ public class Client extends SRSocket {
         //Parses Received ACK & DATA Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
         DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
         //If temp is a duplicate packet...
+        /*
         if (Packet.getPacketType(temp) == Packet.PacketTypes.ACK || Packet.getPacketType(temp) == Packet.PacketTypes.DATA) {
             return ErrorStatus.DUPLICATE;
         }
+        */
 
         if (temp != null) {
             inform(temp, "Sending Error Packet");
@@ -339,34 +341,50 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
             FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
-            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
-            if (dataMode.toLowerCase().equals("y")) {
-                client.setNormal(false);
-            }
-
-
-            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
-            if (verbosity.toLowerCase().equals("y")) {
-                verbose = true;
-            }
-
-            String newTransfer = "y";
-            while (newTransfer.equalsIgnoreCase("y")) {
-                String requestType = "";
-                while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w"))) {
-                    requestType = client.getInput("Would you like to Write or Read? (W/R) ");
-                }
-
-                byte[] filename = client.getInput("Enter file name: ").getBytes();
-                byte[] mode = "octet".getBytes();
-                client.transfer(filename, mode, requestType);
-                client.close();
-
-                client = new Client();
-                client.setNormal(!dataMode.toLowerCase().equals("y"));
-
-                newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
-            }
+            if (FileTransfer.parentDirectory.equalsIgnoreCase("q"));
+            System.out.println("Input 'q' during any instruction to quit.");
+	        while (true) {
+	            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
+	            if (dataMode.toLowerCase().equals("y")) {
+	                client.setNormal(false);
+	            } else if (dataMode.toLowerCase().equals("q")) {
+	            	break;
+	            }
+	
+	            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
+	            if (verbosity.toLowerCase().equals("y")) {
+	                verbose = true;
+	            } else if (verbosity.toLowerCase().equals("q")) {
+	            	break;
+	            }
+	
+	            String newTransfer = "y";
+	            String requestType = "";
+	            while (newTransfer.equalsIgnoreCase("y")) {
+	                requestType = "";
+	                while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
+	                    requestType = client.getInput("Would you like to Write or Read? (W/R) ");
+	                }
+	                if (requestType.toLowerCase().equals("q")) {
+	                	break;
+	                }
+	
+	                byte[] filename = client.getInput("Enter file name: ").getBytes();
+	                byte[] mode = "octet".getBytes();
+	                client.transfer(filename, mode, requestType);
+	                client.close();
+	
+	                client = new Client();
+	                client.setNormal(!dataMode.toLowerCase().equals("y"));
+	
+	                newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
+	            }
+	            if (requestType.toLowerCase().equals("q") || !newTransfer.equalsIgnoreCase("y")) {
+                	break;
+                } 
+	        } 
+	        client.close();
+	        System.out.println("Client closed");
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
         }
