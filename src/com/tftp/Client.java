@@ -35,7 +35,7 @@ public class Client extends SRSocket {
     private boolean isNormal = true;
     private FileTransfer fileTransfer;
     private int connectionTID;
-    private enum ErrorStatus {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR}
+    private enum ErrorStatus {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR, DUPLICATE}
 
     public Client() throws IOException {
         super("Client");
@@ -134,8 +134,13 @@ public class Client extends SRSocket {
         DatagramPacket response;
         response = receive();
         connectionTID = response.getPort();
+        DatagramPacket ackPacket = null;
 
         while (true) {
+            if (response == null) {
+                System.out.println("DATA Packet was never Received.");
+                break;
+            }
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
@@ -148,7 +153,14 @@ public class Client extends SRSocket {
                     if (fileTransfer.isComplete())
                         break;
 
-                    response = receive();
+                    response = receive(); //Wont timeout if there is an incorrect TID
+                    continue;
+                } else if (status == ErrorStatus.DUPLICATE) {
+                    //If response is a duplicate, that indicates that the connection never received the original
+                    //ack and must resend the original ack.
+                    inform(ackPacket, "Resending ACK Packet", true);
+                    send(ackPacket);
+                    response = this.waitForPacket(ackPacket);
                     continue;
                 }
 
@@ -168,7 +180,7 @@ public class Client extends SRSocket {
 
                 fileTransfer.write(data);
 
-                DatagramPacket ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
+                ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
                 ackPacket.setPort(serverPort);
 
                 inform(ackPacket, "Sending ACK Packet", true);
@@ -178,7 +190,7 @@ public class Client extends SRSocket {
                     break;
                 }
 
-                response = this.waitForPacket(ackPacket);
+                response = waitForPacket(ackPacket);
             } else {
                 if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
                     checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an DATA even though it is.
@@ -208,8 +220,13 @@ public class Client extends SRSocket {
         DatagramPacket response;
         response = receive();
         connectionTID = response.getPort();
+        DatagramPacket dataPacket = null;
 
         while(true) {
+            if (response == null) {
+                System.out.println("ACK Packet was never Received.");
+                break;
+            }
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
@@ -226,9 +243,16 @@ public class Client extends SRSocket {
 
                     response = receive();
                     continue;
+                } else if (status == ErrorStatus.DUPLICATE) {
+                    //If response is a duplicate, that indicates that the connection never received the original
+                    //ack and must resend the original ack.
+                    inform(dataPacket, "Resending ACK Packet", true);
+                    send(dataPacket);
+                    response = this.waitForPacket(dataPacket);
+                    continue;
                 }
 
-                DatagramPacket dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
+                dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
                 dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
                 dataPacket.setPort(serverPort);
 
@@ -241,10 +265,6 @@ public class Client extends SRSocket {
                 }
 
                 response = waitForPacket(dataPacket);
-                if (response == null) {
-                    System.out.println("Packet was'nt Received.");
-                    break;
-                }
             } else {
                 if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
                     checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an ACK even though it is.
@@ -270,8 +290,13 @@ public class Client extends SRSocket {
      * @throws IOException
      */
     private ErrorStatus checkPacket(DatagramPacket received, int expectedTID, int blockNumber) throws IOException {
-        //Parses Received ACK Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
+        //Parses Received ACK & DATA Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
         DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
+        //If temp is a duplicate packet...
+        if (Packet.getPacketType(temp) == Packet.PacketTypes.ACK || Packet.getPacketType(temp) == Packet.PacketTypes.DATA) {
+            return ErrorStatus.DUPLICATE;
+        }
+
         if (temp != null) {
             inform(temp, "Sending Error Packet");
             send(temp);
