@@ -238,6 +238,10 @@ public class Connection extends SRSocket implements Runnable {
             }
 
             request = waitForPacket(packet);
+            if (request == null) {
+                System.out.println("Packet was'nt Received.");
+                break;
+            }
             inform(request, "Received Packet", true);
         }
 

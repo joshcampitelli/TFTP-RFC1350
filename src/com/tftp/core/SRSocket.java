@@ -97,17 +97,14 @@ public class SRSocket extends DatagramSocket {
      */
     protected DatagramPacket waitForPacket(DatagramPacket retransmitPacket) throws IOException {
         DatagramPacket response = null;
-        boolean packetReceived = false;
         for (int i = 0; i < RETRANSMIT_NUM; i++) {
             try {
                 response = receive(TIMEOUT_TIME);
-                packetReceived = true;
+                break;
             } catch (SocketTimeoutException e) {
                 inform(retransmitPacket, "Resending DATA Packet");
                 send(retransmitPacket);
             }
-            if (packetReceived)
-                break;
         }
 
         //Will return null if the packet never arrives. Which Will lead to a NullPointerException in Connection
@@ -179,7 +176,7 @@ public class SRSocket extends DatagramSocket {
      * If any Client has received an Error Packet this means that either the data received from the Server
      * was corrupt or the Server was not expecting Packets from this Client.
      */
-    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID, int blockNumber) { //Can also check block numbers as well.
+    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID, int blockNumber) {
         byte[] data = received.getData();
         String errorMsg = "";
         DatagramPacket errorPacket;
@@ -198,11 +195,15 @@ public class SRSocket extends DatagramSocket {
             errorMsg = "Undefined OpCode";
             receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
             errorPacket = receivedPacket.getDatagram();
-        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) != blockNumber) {
+        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) > blockNumber) {
+            //Block Number is greater than the expected, indicating that the packet is an error.
             errorMsg = "Incorrect Block Number";
             receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
             errorPacket = receivedPacket.getDatagram();
-        } else {                                    //Unknown Packet was received, send back fatal Error Packet 4
+        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) < blockNumber) {
+        //Block Number is less than the expected, indicating that the packet is a duplicate.
+            return null; //Ignore the packet.
+        } else {
             errorPacket = null;
         }
         if (errorPacket != null)

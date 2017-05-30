@@ -241,6 +241,10 @@ public class Client extends SRSocket {
                 }
 
                 response = waitForPacket(dataPacket);
+                if (response == null) {
+                    System.out.println("Packet was'nt Received.");
+                    break;
+                }
             } else {
                 if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
                     checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an ACK even though it is.
