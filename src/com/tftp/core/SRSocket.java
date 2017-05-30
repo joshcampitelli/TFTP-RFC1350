@@ -202,7 +202,7 @@ public class SRSocket extends DatagramSocket {
             errorPacket = receivedPacket.getDatagram();
         } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) < blockNumber) {
         //Block Number is less than the expected, indicating that the packet is a duplicate.
-            return null; //Ignore the packet.
+            return received; //Returning Received indicates a duplicate packet was received.
         } else {
             errorPacket = null;
         }
