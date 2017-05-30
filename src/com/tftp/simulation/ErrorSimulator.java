@@ -140,7 +140,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @throws IOException
      */
-    public void simulate() throws IOException {
+    public void simulate() throws IOException, InterruptedException {
         System.out.printf("ErrorSimulator has successfully launched its operations.\n\n");
         int sessions = 0;
 
@@ -159,7 +159,7 @@ public class ErrorSimulator extends SRSocket {
             new SimulatorListener(simulator).start();
 
             simulator.simulate();
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }

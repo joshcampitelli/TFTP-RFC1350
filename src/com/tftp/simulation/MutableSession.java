@@ -35,7 +35,7 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException {
+    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException, InterruptedException {
         super(String.format("Mutable Session (client tid: %d)", source));
         this.source = source;
         this.simulator = simulator;
@@ -55,9 +55,9 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private DatagramPacket calibrate(DatagramPacket client) throws IOException {
+    private DatagramPacket calibrate(DatagramPacket client) throws IOException, InterruptedException {
         if (simulator.isTargetPacket(client)) {
-            intercept(client, simulator.dequeue(), SERVER_PORT, false);
+            intercept(client, simulator.dequeue(), SERVER_PORT);
         } else {
             DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
             inform(server, "Sending Packet");
@@ -71,16 +71,45 @@ public class MutableSession extends SRSocket implements Runnable {
         return simulator.produceFrom(response, client.getPort(), client.getAddress());
     }
 
-    private void intercept(DatagramPacket packet, Modification modification, int destination, boolean sendOnly) throws IOException {
+    private void intercept(DatagramPacket packet, Modification modification, int destination) throws IOException, InterruptedException {
         if (modification instanceof PacketModification) {
-            mutate(packet, (PacketModification) modification, destination, sendOnly);
+            mutate(packet, (PacketModification) modification, destination);
         } else {
-            network(packet, (NetworkModification) modification, destination, sendOnly);
+            network(packet, (NetworkModification) modification, destination);
         }
     }
 
-    private void network(DatagramPacket packet, NetworkModification modification, int destination, boolean sendOnly) {
+    private void network(DatagramPacket packet, NetworkModification modification, int destination) throws IOException, InterruptedException {
+        switch (modification.getErrorType()) {
+            case ErrorSimulator.SIMULATE_DELAYED_PACKET:
+                delay(packet, destination);
+                break;
+            case ErrorSimulator.SIMULATE_DUPLICATED_PACKET:
 
+                // send the packet twice
+                duplicate(packet, destination);
+                break;
+            case ErrorSimulator.SIMULATE_LOST_PACKET:
+
+                // don't do anything to simulate lost packet
+                break;
+        }
+    }
+
+    private void delay(DatagramPacket packet, int destination) throws InterruptedException, IOException {
+        Thread.sleep(5000);
+        DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+        inform(dispatch, "Sending Packet");
+        send(dispatch);
+    }
+
+    private void duplicate(DatagramPacket packet, int destination) throws IOException {
+        DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+        inform(dispatch, "Sending Packet");
+        send(dispatch);
+
+        inform(dispatch, "Sending Duplicate Packet");
+        send(dispatch);
     }
 
     /**
@@ -91,11 +120,11 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private void mutate(DatagramPacket packet, PacketModification modification, int destination, boolean sendOnly) throws IOException {
+    private void mutate(DatagramPacket packet, PacketModification modification, int destination) throws IOException {
         if (modification.getErrorId() == TFTPError.UNKNOWN_TRANSFER_ID) {
             simulateInvalidTID(packet, destination);
         } else if (modification.getErrorId() == TFTPError.ILLEGAL_TFTP_OPERATION) {
-            simulateIllegalTftpOperation(packet, modification, destination, sendOnly);
+            simulateIllegalTftpOperation(packet, modification, destination);
         }
     }
 
@@ -124,13 +153,11 @@ public class MutableSession extends SRSocket implements Runnable {
     /**
      * Simulates an Illegal TFTP Operation (ERROR type 4) case by changing the opcode to an unrecognized one.
      *
-     * @param sendOnly true - only performs the send part of the cycle, otherwise performs the full send/receive
-     *
      * @return the response from the mutation cycle, or null if send-only
      *
      * @throws IOException
      */
-    private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest, boolean sendOnly) throws IOException {
+    private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest) throws IOException {
         switch (modification.getErrorType()) {
             case ErrorSimulator.SIMULATE_INVALID_OPCODE:
 
@@ -194,7 +221,7 @@ public class MutableSession extends SRSocket implements Runnable {
                 inform(packet, "Received Packet");
 
                 if (simulator.isTargetPacket(packet)) {
-                    intercept(packet, simulator.dequeue(), dest, false);
+                    intercept(packet, simulator.dequeue(), dest);
                 } else {
                     DatagramPacket recipient = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
                     inform(recipient, "Sending Packet");
@@ -205,7 +232,7 @@ public class MutableSession extends SRSocket implements Runnable {
             }
         } catch (SocketTimeoutException ex) {
             // socket timed out, thread will die. No need to inform.
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
