@@ -1,6 +1,5 @@
 package com.tftp;
 
-import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
 import java.net.DatagramPacket;
@@ -49,7 +48,7 @@ public class Client extends SRSocket {
      *
      * @return the user input as a string
      */
-    public String getInput(String text) {
+    private String getInput(String text) {
         Scanner scanner = new Scanner(System.in);
         System.out.printf(text);
 
@@ -181,8 +180,11 @@ public class Client extends SRSocket {
 
                 response = this.waitForPacket(ackPacket);
             } else {
-                troubleshoot(response);
-                System.out.println("Terminating Client...");
+                if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
+                    checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an DATA even though it is.
+                else
+                    troubleshoot(response);
+
                 break;
             }
         }
@@ -214,7 +216,7 @@ public class Client extends SRSocket {
             byte[] data = fileTransfer.read();
 
             //Ensure the packet received from the server is of type ACK
-            if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
+            if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) { //what defines an ACK Packet???? When modifying aspects of packets in the simulator is it still an ACK?
                 ErrorStatus status = checkPacket(response, this.connectionTID, dataBlock - 1);
                 if (status == ErrorStatus.FATAL_ERROR) {
                     break;
@@ -238,11 +240,14 @@ public class Client extends SRSocket {
                     break;
                 }
 
-                response = this.waitForPacket(dataPacket);
+                response = waitForPacket(dataPacket);
             } else {
-                troubleshoot(response);
-                System.out.println("Terminating Client...");
+                if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
+                    checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an ACK even though it is.
+                else
+                    troubleshoot(response);
 
+                System.out.println("Terminating Client...");
                 break;
             }
         }
@@ -279,7 +284,7 @@ public class Client extends SRSocket {
     }
 
     /**
-     * Troubleshoots the response received for the abnormality.
+     * Troubleshoots the response received for the abnormality. Received an Error Packet from the Connection.
      *
      * @param errorPacket the abnormal DatagramPacket
      * @throws IOException
