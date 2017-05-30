@@ -29,8 +29,6 @@ public class Client extends SRSocket {
 
     public static final int ERRORSIMULATOR_PORT = 23;
     public static boolean verbose;
-    private static int TIMEOUT_TIME = 5000; //MilliSeconds to wait before retransmitting a packet
-    private static int RETRANSMIT_NUM = 3; //Number of times to retransmit a packet
 
     private int serverPort = 69;
     private int dataBlock = 1;
@@ -250,25 +248,6 @@ public class Client extends SRSocket {
         }
 
         System.out.println("[IMPORTANT] Transfer finished!");
-    }
-
-
-    private DatagramPacket waitForPacket(DatagramPacket retransmitPacket) throws IOException {
-        DatagramPacket response = null;
-        boolean packetReceived = false; //Loop and keep sending packets ???
-        int counter = 0;
-        do {
-            try {
-                response = super.receive(TIMEOUT_TIME);
-                packetReceived = true;
-            } catch (SocketTimeoutException e) {
-                inform(retransmitPacket, "Resending DATA Packet");
-                send(retransmitPacket);
-                counter++;
-            }
-        } while (!packetReceived || counter == RETRANSMIT_NUM);
-
-        return response;
     }
 
     /**
