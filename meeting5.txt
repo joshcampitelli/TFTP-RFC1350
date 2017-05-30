@@ -4,10 +4,10 @@
 SYSC3303 – Iteration 3 comments:
 Tests should be available in a runnable interface for the TA's to check the program is working, it must be flexible and personalized. The error simulator must require the user to enter information to add errors. TA's will not change the codes. 
 
-28/05/2017
+26/05/2017
 
 
-SYSC3303 – Meeting 5 for etiration:
+SYSC3303 – Meeting 5 for etiration 4:
 
 Meeting #5
 
