@@ -27,6 +27,8 @@ import com.tftp.core.protocol.packets.ERRORPacket;
 public class SRSocket extends DatagramSocket {
 
     private String name;
+    private static int TIMEOUT_TIME = 5000; //MilliSeconds to wait before retransmitting a packet
+    private static int RETRANSMIT_NUM = 3; //Number of times to retransmit a packet
 
     public SRSocket(String name) throws IOException {
         super();
@@ -81,6 +83,35 @@ public class SRSocket extends DatagramSocket {
             setSoTimeout(0);
             throw ex;
         }
+    }
+
+    /**
+     * The waitForPacket method is simply a receive method with the timeout and retransmit implemented
+     * the variables TIMEOUT_TIME & RETRANSMIT_NUM correspond to the time which it takes for the socket to
+     * timeout initialized to 5000ms, and the number of times which you want to resend the packet before
+     * giving up initialized to 3.
+     *
+     * @param retransmitPacket the packet to be resent if the Socket Times Out
+     * @return DatagramPacket, the packet which is received
+     * @throws IOException although catches the SocketTimeoutException
+     */
+    protected DatagramPacket waitForPacket(DatagramPacket retransmitPacket) throws IOException {
+        DatagramPacket response = null;
+        boolean packetReceived = false;
+        for (int i = 0; i < RETRANSMIT_NUM; i++) {
+            try {
+                response = receive(TIMEOUT_TIME);
+                packetReceived = true;
+            } catch (SocketTimeoutException e) {
+                inform(retransmitPacket, "Resending DATA Packet");
+                send(retransmitPacket);
+            }
+            if (packetReceived)
+                break;
+        }
+
+        //Will return null if the packet never arrives. Which Will lead to a NullPointerException in Connection
+        return response;
     }
 
     public void send(DatagramPacket packet) throws IOException {
