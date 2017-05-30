@@ -216,36 +216,37 @@ public class Connection extends SRSocket implements Runnable {
     }
 
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
-        DatagramPacket packet = handlePacket(request);
+        DatagramPacket packet;
 
-        if (packet == null){
-            setActive(false);
-        } else {
-            inform(packet, "Sending Packet");
-            send(packet);
+        while (true) {
+            packet = handlePacket(request);
+            if (packet != null){
+                inform(packet, "Sending Packet");
+                send(packet);
+            } else {
+                break;
+            }
+
+            // transfer complete
+            if (fileTransfer != null && fileTransfer.isComplete()) {
+                server.getTransferController().deregisterTransfer(fileTransfer);
+                setActive(false);
+            }
+
+            if (!isActive()) {
+                break;
+            }
+
+            request = waitForPacket(packet);
+            inform(request, "Received Packet", true);
         }
 
-        // transfer complete
-        if (fileTransfer != null && fileTransfer.isComplete()) {
-            server.getTransferController().deregisterTransfer(fileTransfer);
-            setActive(false);
-        }
     }
 
     @Override
     public void run() {
         try {
-            while (true) {
-                process(request);
-
-                if (!isActive()) {
-                    break;
-                }
-
-                request = receive();
-                inform(request, "Received Packet", true);
-            }
-
+            process(request);
             System.out.printf("%s terminated and is closing...\n", getName());
         } catch (IOException | InvalidPacketException | UnknownIOModeException e) {
             System.out.printf("%s sent an invalid request. Terminating thread...\n", getName());
