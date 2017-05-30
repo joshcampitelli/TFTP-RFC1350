@@ -128,10 +128,10 @@ public class SRSocket extends DatagramSocket {
         System.out.printf("%s Host Address: %s, Host port: %d, Length: %d\n",
                         event.contains("Send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
         System.out.printf("Data (as string): %s\n", new String(packet.getData(), 0, packet.getData().length));
-
         if (extra) {
-            System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
+            System.out.printf("Data (as bytes): %s\n", Arrays.toString(packet.getData()));
         }
+        System.out.printf("Blocknumber: %s\n\n", BlockNumber.getBlockNumber(packet.getData()));
     }
 
     public void inform(DatagramPacket packet, String event) {
