@@ -1,6 +1,6 @@
 Course code: SYSC3303A
-Group number: 3
-Iteration number: 2
+Group number: 2
+Iteration number: 3
 Date: May 23, 2017. 
 Students (by alphabetical order):
          Josh Campitelli (101010050)
