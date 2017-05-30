@@ -7,9 +7,10 @@ import java.net.InetAddress;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
-import com.tftp.core.protocol.Packet;
 import com.tftp.core.SRSocket;
 import com.tftp.core.protocol.TFTPError;
+import com.tftp.simulation.modifications.NetworkModification;
+import com.tftp.simulation.modifications.PacketModification;
 
 /**
  * MutableSession is similar to Connection for server sided requests. MutableSession allows the ErrorSimulator
@@ -56,7 +57,7 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException {
         if (simulator.isTargetPacket(client)) {
-            mutate(client, simulator.dequeue(), SERVER_PORT, false);
+            intercept(client, simulator.dequeue(), SERVER_PORT, false);
         } else {
             DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
             inform(server, "Sending Packet");
@@ -70,6 +71,17 @@ public class MutableSession extends SRSocket implements Runnable {
         return simulator.produceFrom(response, client.getPort(), client.getAddress());
     }
 
+    private void intercept(DatagramPacket packet, Modification modification, int destination, boolean sendOnly) throws IOException {
+        if (modification instanceof PacketModification) {
+            mutate(packet, (PacketModification) modification, destination, sendOnly);
+        } else {
+            network(packet, (NetworkModification) modification, destination, sendOnly);
+        }
+    }
+
+    private void network(DatagramPacket packet, NetworkModification modification, int destination, boolean sendOnly) {
+
+    }
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -182,7 +194,7 @@ public class MutableSession extends SRSocket implements Runnable {
                 inform(packet, "Received Packet");
 
                 if (simulator.isTargetPacket(packet)) {
-                    mutate(packet, simulator.dequeue(), dest, false);
+                    intercept(packet, simulator.dequeue(), dest, false);
                 } else {
                     DatagramPacket recipient = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
                     inform(recipient, "Sending Packet");

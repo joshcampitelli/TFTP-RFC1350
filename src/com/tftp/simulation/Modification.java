@@ -1,24 +1,12 @@
 package com.tftp.simulation;
 
+import com.tftp.core.protocol.Packet.PacketTypes;
 import java.net.DatagramPacket;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
-import com.tftp.core.protocol.Packet.PacketTypes;
 
-/**
- * PacketModification provides the template for selecting certain packets and deciding how to corrupt them
- * to produce certain errors.
- *
- * Course: Real Time Concurrent Systems
- * Term: Summer 2017
- *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
- * @since May the 14th, 2017.
- */
-public class PacketModification {
-
+public abstract class Modification {
     private int blockNumber = -1;
-    private byte errorId = -1;
     private byte errorType = -1;
     private PacketTypes packetType = PacketTypes.UNKNOWN;
 
@@ -53,22 +41,6 @@ public class PacketModification {
         return this.errorType;
     }
 
-
-    /**
-     * Sets the Error packet Id of the error to be produced. (i.e. ERROR_INVALID_TRANSFER_ID)
-     */
-    public void setErrorId(byte id) {
-        this.errorId = id;
-    }
-
-    /**
-     *
-     * @return the error id of this instance
-     */
-    public int getErrorId() {
-        return this.errorId;
-    }
-
     /**
      * Checks if the DatagramPacket target matches the lookout variables.
      *
@@ -86,6 +58,6 @@ public class PacketModification {
 
     @Override
     public String toString() {
-        return String.format("Modification for packet blocknumber #%d, packet type: %s", blockNumber, packetType);
+        return String.format("Modification for blocknumber #%d, packet type: %s", blockNumber, packetType);
     }
 }

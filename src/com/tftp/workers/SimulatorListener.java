@@ -68,6 +68,20 @@ public class SimulatorListener extends Thread {
         return 0;
     }
 
+
+    private boolean wantsNetworkErrors() {
+        System.out.println("The Error Simulator is equipped to do the following:");
+        System.out.println("\tNetwork Errors (e.g. delay packet) (1)");
+        System.out.println("\tInterior Packet Modification (2)");
+
+        int option = Integer.parseInt(simulator.getInput("By typing the numbered index, specify which one: "));
+        while (option != 1 && option != 2) {
+            option = Integer.parseInt(simulator.getInput("By typing the numbered index, specify which one: "));
+        }
+
+        return option == 1;
+    }
+
     private byte getErrorId(PacketTypes type) {
         System.out.println("The Error Simulator supports the following ERROR packets for your chosen packet type:");
         System.out.println("\tIllegal TFTP Operation (4)");
@@ -95,7 +109,7 @@ public class SimulatorListener extends Thread {
             System.out.println("You have chosen Error Packet 4. There are multiple ways to achieve it:");
             System.out.println("\tINVALID_OPCODE (1)");
             System.out.println("\tINVALID_PACKET_SIZE (2)");
-            
+
             if (isBlockNumberRequest(type)) {
                 System.out.println("\tINVALID_BLOCK_NUMBER (3)");
             }
@@ -104,12 +118,26 @@ public class SimulatorListener extends Thread {
             }
 
             String errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
-            while (Integer.valueOf(errsubStr) < 1 && Integer.valueOf(errsubStr) > 4) {
+            while (Integer.valueOf(errsubStr) < 1 || Integer.valueOf(errsubStr) > 4) {
                 errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
             }
 
             return Byte.valueOf(errsubStr);
         }
+    }
+
+    private byte getNetworkErrorType() {
+        System.out.println("You have chosen to produce a network Error. The following options are available:");
+        System.out.println("\tDELAY_PACKET (5)");
+        System.out.println("\tDUPLICATE_PACKET (6)");
+        System.out.println("\tLOSE_PACKET (7)");
+
+        String errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
+        while (Integer.valueOf(errsubStr) < 5 || Integer.valueOf(errsubStr) > 7) {
+            errsubStr = simulator.getInput("By providing the numbered key, which one would you like to choose? ");
+        }
+
+        return Byte.valueOf(errsubStr);
     }
 
 
@@ -127,11 +155,16 @@ public class SimulatorListener extends Thread {
         while (true) {
             PacketTypes packetType = getPacketType();
             int block = getBlockNumber(packetType);
-            byte errorId = getErrorId(packetType);
-            byte errorType = getErrorType(packetType, errorId);
-
-            // Queue the modification
-            System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(block, packetType, errorId, errorType));
+            byte errorId = 0;
+            byte errorType = 0;
+            if (wantsNetworkErrors()) {
+                errorType = getNetworkErrorType();
+                System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(block, packetType, errorType));
+            } else {
+                errorId = getErrorId(packetType);
+                errorType = getErrorType(packetType, errorId);
+                System.out.printf("SUCCESS: Queued %s\n", simulator.queueModification(block, packetType, errorId, errorType, false));
+            }
         }
     }
 }

@@ -6,8 +6,9 @@ import java.util.LinkedList;
 import java.util.Scanner;
 import java.io.IOException;
 import com.tftp.core.SRSocket;
-import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.Packet.PacketTypes;
+import com.tftp.simulation.modifications.NetworkModification;
+import com.tftp.simulation.modifications.PacketModification;
 import com.tftp.workers.SimulatorListener;
 
 /**
@@ -27,12 +28,15 @@ import com.tftp.workers.SimulatorListener;
 public class ErrorSimulator extends SRSocket {
 
     private static int RECEIVE_PORT = 23;
-    private final LinkedList<PacketModification> modifications;
-    public static final byte SIMULATE_NO_SPECIAL_ERROR = 00;
-    public static final byte SIMULATE_INVALID_OPCODE = 01;
-    public static final byte SIMULATE_INVALID_PACKET_SIZE = 02;
-    public static final byte SIMULATE_INVALID_BLOCK_NUMBER = 03;
-    public static final byte SIMULATE_INVALID_MODE = 04;
+    private final LinkedList<Modification> modifications;
+    public static final byte SIMULATE_NO_SPECIAL_ERROR = 0;
+    public static final byte SIMULATE_INVALID_OPCODE = 1;
+    public static final byte SIMULATE_INVALID_PACKET_SIZE = 2;
+    public static final byte SIMULATE_INVALID_BLOCK_NUMBER = 3;
+    public static final byte SIMULATE_INVALID_MODE = 4;
+    public static final byte SIMULATE_DELAYED_PACKET = 5;
+    public static final byte SIMULATE_DUPLICATED_PACKET = 6;
+    public static final byte SIMULATE_LOST_PACKET = 7;
 
     /**
      * Constructs the ErrorSimulator by initializing the main receive socket (listening on port 23) and the
@@ -72,17 +76,31 @@ public class ErrorSimulator extends SRSocket {
      * @param type The type of packet it must be to be considered for modification
      * @param errorType The type of error packet to produce from the modification
      */
-    public PacketModification queueModification(int blocknumber, PacketTypes type, byte errorId, byte errorType) {
-        PacketModification modification = new PacketModification();
-        modification.setPacketParameters(blocknumber, type);
-        modification.setErrorId(errorId);
-        modification.setErrorType(errorType);
+    public Modification queueModification(int blocknumber, PacketTypes type, byte errorId, byte errorType, boolean network) {
+        Modification modification = null;
+        if (network) {
+            modification = new NetworkModification();
+            NetworkModification temp = (NetworkModification) modification;
+            temp.setPacketParameters(blocknumber, type);
+            temp.setErrorType(errorType);
+        } else {
+            modification = new PacketModification();
+            PacketModification temp = (PacketModification) modification;
+
+            temp.setPacketParameters(blocknumber, type);
+            temp.setErrorId(errorId);
+            temp.setErrorType(errorType);
+        }
 
         synchronized (modifications) {
             this.modifications.add(modification);
         }
 
         return modification;
+    }
+
+    public Modification queueModification(int blocknumber, PacketTypes type, byte errorType) {
+        return queueModification(blocknumber, type, (byte) -1, errorType, true);
     }
 
 
@@ -105,7 +123,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @return The PacketModification at the front of the queue, if exists.
      */
-    public PacketModification dequeue() {
+    public Modification dequeue() {
         synchronized (modifications) {
             if (!modifications.isEmpty()) {
                 return modifications.remove();
