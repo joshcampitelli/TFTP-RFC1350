@@ -175,8 +175,7 @@ public class MutableSession extends SRSocket implements Runnable {
             case ErrorSimulator.SIMULATE_INVALID_BLOCK_NUMBER:
 
                 // corrupt the block number, choose a random byte
-                packet.getData()[2] = (byte) (Math.random() * 256);
-                packet.getData()[3] = (byte) (Math.random() * 256);
+                packet.getData()[3]++;
                 break;
             case ErrorSimulator.SIMULATE_INVALID_MODE:
 
