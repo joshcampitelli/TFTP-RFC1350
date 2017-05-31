@@ -158,6 +158,7 @@ public class Client extends SRSocket {
                 } else if (status == ErrorStatus.DUPLICATE) {
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
+                    System.out.println();
                     inform(ackPacket, "Resending ACK Packet", true);
                     send(ackPacket);
                     response = this.waitForPacket(ackPacket);
@@ -233,22 +234,27 @@ public class Client extends SRSocket {
             byte[] data = fileTransfer.read();
 
             //Ensure the packet received from the server is of type ACK
-            if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) { //what defines an ACK Packet???? When modifying aspects of packets in the simulator is it still an ACK?
+            if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
                 ErrorStatus status = checkPacket(response, this.connectionTID, dataBlock - 1);
                 if (status == ErrorStatus.FATAL_ERROR) {
+                    System.out.println("FATAL ERROR DETECTED");
                     break;
                 } else if (status == ErrorStatus.NON_FATAL_ERROR) {
+                    System.out.println("NON-FATAL ERROR DETECTED");
                     if (fileTransfer.isComplete())
                         break;
 
                     response = receive();
                     continue;
                 } else if (status == ErrorStatus.DUPLICATE) {
+                    System.out.println("DUPLICATE PACKET DETECTED");
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
                     inform(dataPacket, "Resending ACK Packet", true);
                     send(dataPacket);
                     response = this.waitForPacket(dataPacket);
+
+
                     continue;
                 }
 
@@ -293,24 +299,22 @@ public class Client extends SRSocket {
         //Parses Received ACK & DATA Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
         DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
         //If temp is a duplicate packet...
-        /*
+        if (temp == null) {
+            return ErrorStatus.NO_ERROR;
+        }
         if (Packet.getPacketType(temp) == Packet.PacketTypes.ACK || Packet.getPacketType(temp) == Packet.PacketTypes.DATA) {
+            System.out.println("DUPLICATE PACKET RECEIVED");
             return ErrorStatus.DUPLICATE;
         }
-        */
-
-        if (temp != null) {
-            inform(temp, "Sending Error Packet");
-            send(temp);
-            if (temp.getData()[3] == 4) {
-                System.out.println("Terminating Client...");
-                return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
-            } else {
-                System.out.println("Ignoring Packet, Continuing Execution.");
-                return ErrorStatus.NON_FATAL_ERROR; //Non-Fatal Error Detected (Error Code: 05)
-            }
+        
+        inform(temp, "Sending Error Packet");
+        send(temp);
+        if (temp.getData()[3] == 4) {
+            System.out.println("Terminating Client...");
+            return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
         } else {
-            return ErrorStatus.NO_ERROR;
+            System.out.println("Ignoring Packet, Continuing Execution.");
+            return ErrorStatus.NON_FATAL_ERROR; //Non-Fatal Error Detected (Error Code: 05)
         }
     }
 
@@ -343,48 +347,48 @@ public class Client extends SRSocket {
             FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
             if (FileTransfer.parentDirectory.equalsIgnoreCase("q"));
             System.out.println("Input 'q' during any instruction to quit.");
-	        while (true) {
-	            String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
-	            if (dataMode.toLowerCase().equals("y")) {
-	                client.setNormal(false);
-	            } else if (dataMode.toLowerCase().equals("q")) {
-	            	break;
-	            }
-	
-	            String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
-	            if (verbosity.toLowerCase().equals("y")) {
-	                verbose = true;
-	            } else if (verbosity.toLowerCase().equals("q")) {
-	            	break;
-	            }
-	
-	            String newTransfer = "y";
-	            String requestType = "";
-	            while (newTransfer.equalsIgnoreCase("y")) {
-	                requestType = "";
-	                while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
-	                    requestType = client.getInput("Would you like to Write or Read? (W/R) ");
-	                }
-	                if (requestType.toLowerCase().equals("q")) {
-	                	break;
-	                }
-	
-	                byte[] filename = client.getInput("Enter file name: ").getBytes();
-	                byte[] mode = "octet".getBytes();
-	                client.transfer(filename, mode, requestType);
-	                client.close();
-	
-	                client = new Client();
-	                client.setNormal(!dataMode.toLowerCase().equals("y"));
-	
-	                newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
-	            }
-	            if (requestType.toLowerCase().equals("q") || !newTransfer.equalsIgnoreCase("y")) {
-                	break;
-                } 
-	        } 
-	        client.close();
-	        System.out.println("Client closed");
+            while (true) {
+                String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
+                if (dataMode.toLowerCase().equals("y")) {
+                    client.setNormal(false);
+                } else if (dataMode.toLowerCase().equals("q")) {
+                    break;
+                }
+
+                String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
+                if (verbosity.toLowerCase().equals("y")) {
+                    verbose = true;
+                } else if (verbosity.toLowerCase().equals("q")) {
+                    break;
+                }
+
+                String newTransfer = "y";
+                String requestType = "";
+                while (newTransfer.equalsIgnoreCase("y")) {
+                    requestType = "";
+                    while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
+                        requestType = client.getInput("Would you like to Write or Read? (W/R) ");
+                    }
+                    if (requestType.toLowerCase().equals("q")) {
+                        break;
+                    }
+
+                    byte[] filename = client.getInput("Enter file name: ").getBytes();
+                    byte[] mode = "octet".getBytes();
+                    client.transfer(filename, mode, requestType);
+                    client.close();
+
+                    client = new Client();
+                    client.setNormal(!dataMode.toLowerCase().equals("y"));
+
+                    newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
+                }
+                if (requestType.toLowerCase().equals("q") || !newTransfer.equalsIgnoreCase("y")) {
+                    break;
+                }
+            }
+            client.close();
+            System.out.println("Client closed");
         } catch (IOException | UnknownIOModeException e) {
             e.printStackTrace();
         }
