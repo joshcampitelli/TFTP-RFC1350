@@ -158,10 +158,7 @@ public class Client extends SRSocket {
                 } else if (status == ErrorStatus.DUPLICATE) {
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
-                    System.out.println();
-                    inform(ackPacket, "Resending ACK Packet", true);
-                    send(ackPacket);
-                    response = this.waitForPacket(ackPacket);
+                    response = receive();
                     continue;
                 }
 
@@ -306,7 +303,7 @@ public class Client extends SRSocket {
             System.out.println("DUPLICATE PACKET RECEIVED");
             return ErrorStatus.DUPLICATE;
         }
-        
+
         inform(temp, "Sending Error Packet");
         send(temp);
         if (temp.getData()[3] == 4) {
