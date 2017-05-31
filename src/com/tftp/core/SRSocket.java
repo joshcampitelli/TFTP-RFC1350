@@ -102,8 +102,10 @@ public class SRSocket extends DatagramSocket {
                 response = receive(TIMEOUT_TIME);
                 break;
             } catch (SocketTimeoutException e) {
-                inform(retransmitPacket, "Resending DATA Packet");
-                send(retransmitPacket);
+                if (Packet.getPacketType(retransmitPacket) == Packet.PacketTypes.DATA) {
+                    inform(retransmitPacket, "Resending DATA Packet");
+                    send(retransmitPacket);
+                }
             }
         }
 

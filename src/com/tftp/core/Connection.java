@@ -9,6 +9,7 @@ import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
+import javax.xml.crypto.Data;
 import java.net.DatagramPacket;
 import java.io.IOException;
 
@@ -31,6 +32,7 @@ public class Connection extends SRSocket implements Runnable {
     private int ackBlock = 0;
     private int dataBlock = 1;
     private boolean active = true;
+    private boolean duplicate = false;
 
     public Connection(Server server, DatagramPacket packet) throws IOException {
         super(String.format("Connection (Client TID: %d)", packet.getPort()));
@@ -99,6 +101,16 @@ public class Connection extends SRSocket implements Runnable {
             return errorReceived(receivedPacket);
         } else {
             errorPacket = parseUnknownPacket(receivedPacket, clientTID, blockNumber);
+        }
+
+        if (errorPacket != null && Packet.getPacketType(errorPacket) == Packet.PacketTypes.ACK) {
+            //Ignore the ACK Packet
+            duplicate = true;
+            return errorPacket;
+        } else if (errorPacket != null && Packet.getPacketType(errorPacket) == Packet.PacketTypes.DATA) {
+            //Resend the ACK Packet with the DATA Packet Block Number
+            duplicate = true;
+            return errorPacket;
         }
 
         if (errorPacket != null && errorPacket.getData()[3] == 4) {
@@ -215,11 +227,38 @@ public class Connection extends SRSocket implements Runnable {
         return null;
     }
 
+    private void duplicateReceived(DatagramPacket duplicatePacket) throws IOException {
+        if (Packet.getPacketType(duplicatePacket) == Packet.PacketTypes.ACK){
+            System.out.println("Duplicate ACK Received: Ignoring Packet.");
+        } else if (Packet.getPacketType(duplicatePacket) == Packet.PacketTypes.DATA) {
+            System.out.println("Duplicate DATA Received: Resending ACK Packet.");
+            byte[] bn = new byte[2];
+            bn[0] = duplicatePacket.getData()[2];
+            bn[1] = duplicatePacket.getData()[3];
+
+            DatagramPacket temp = new ACKPacket(duplicatePacket, bn).getDatagram();
+            inform(temp, "Resending Corresponding ACK");
+            send(temp);
+        }
+    }
+
     private void process(DatagramPacket request) throws IOException, InvalidPacketException, UnknownIOModeException {
         DatagramPacket packet;
 
         while (true) {
             packet = handlePacket(request);
+            if (duplicate) {
+                duplicateReceived(packet);
+                request = waitForPacket(packet);
+                if (request == null) {
+                    System.out.println("Packet was never Received.");
+                    break;
+                }
+                inform(request, "Received Packet", true);
+                duplicate = false;
+                continue;
+            }
+
             if (packet != null){
                 inform(packet, "Sending Packet");
                 send(packet);
