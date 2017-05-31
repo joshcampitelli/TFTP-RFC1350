@@ -13,8 +13,8 @@ Breakdown of responsibilities:
 ------------------------------
 - Josh Campitelli: Contributed refactoring the client and the connection classes, adding network errors and timeouts on the connection, client and server classes. 
 - Ahmed Khattab: Introduced the timing diagrams, helped to create the errors for simulation as an upgrade of iteration 3, added more comments on programming code. 
-- Dario Luzuriaga: Contributed to improving the Error Simulator, helped with the interface consistency, and contributed generating internal and external documents and UML diagrams. 
-- Ahmed Sakr: Contributed refactoring the error simulator, the client, and some of the packing classes. Introduced new code comments. Fixed some pre-existing errors. 
+- Dario Luzuriaga: Helped with the interface consistency, and contributed generating internal and external documents and UML diagrams. 
+- Ahmed Sakr: Added network error simulation capability to the error simulator. Fixed all known errors from iteration 2 and iteration 3. Refactored a huge portion of the codebase to be more modular and consistent. Improved I/O methods.
 - Brian Zhang: Improved upon previous iterations using TA's feedbacks. Helped with network errors.
 
 Iteration 4: 
