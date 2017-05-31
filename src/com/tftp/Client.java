@@ -216,6 +216,7 @@ public class Client extends SRSocket {
      * @throws IOException
      */
     private void wrq() throws IOException {
+        System.out.println(getLocalPort());
         DatagramPacket response;
         response = receive();
         connectionTID = response.getPort();
@@ -297,7 +298,7 @@ public class Client extends SRSocket {
             return ErrorStatus.NO_ERROR;
         }
         if (Packet.getPacketType(temp) == Packet.PacketTypes.ACK || Packet.getPacketType(temp) == Packet.PacketTypes.DATA) {
-            System.out.println("DUPLICATE PACKET RECEIVED");
+            System.out.println("Duplicate Packet Received: Ignoring Packet.");
             return ErrorStatus.DUPLICATE;
         }
 

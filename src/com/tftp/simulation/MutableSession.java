@@ -90,17 +90,22 @@ public class MutableSession extends SRSocket implements Runnable {
                 duplicate(packet, destination);
                 break;
             case ErrorSimulator.SIMULATE_LOST_PACKET:
-
+                this.destination = (this.destination == this.dest) ? this.source : this.dest;
                 // don't do anything to simulate lost packet
                 break;
         }
     }
 
     private void delay(DatagramPacket packet, int destination) throws InterruptedException, IOException {
-        Thread.sleep(5000);
+        Thread.sleep(6000);
         DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
         inform(dispatch, "Sending Packet");
         send(dispatch);
+
+        DatagramPacket retransmitted = receive();
+        retransmitted = simulator.produceFrom(retransmitted, destination, InetAddress.getLocalHost());
+        inform(retransmitted, "Sending retransmitted Packet");
+        send(retransmitted);
     }
 
     private void duplicate(DatagramPacket packet, int destination) throws IOException {
@@ -110,6 +115,10 @@ public class MutableSession extends SRSocket implements Runnable {
 
         inform(dispatch, "Sending Duplicate Packet");
         send(dispatch);
+    }
+
+    private void lose(DatagramPacket packet, int source) {
+
     }
 
     /**
@@ -211,24 +220,26 @@ public class MutableSession extends SRSocket implements Runnable {
         return newArr;
     }
 
+    int destination;
+
     @Override
     public void run() {
         try {
-            int dest = this.dest;
+            destination = this.dest;
 
             while (true) {
-                DatagramPacket packet = receive(5000);
+                DatagramPacket packet = receive();
                 inform(packet, "Received Packet");
 
                 if (simulator.isTargetPacket(packet)) {
-                    intercept(packet, simulator.dequeue(), dest);
+                    intercept(packet, simulator.dequeue(), destination);
                 } else {
-                    DatagramPacket recipient = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
+                    DatagramPacket recipient = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
                     inform(recipient, "Sending Packet");
                     send(recipient);
                 }
 
-                dest = (dest == this.dest) ? this.source : this.dest;
+                destination = (destination == this.dest) ? this.source : this.dest;
             }
         } catch (SocketTimeoutException ex) {
             // socket timed out, thread will die. No need to inform.
