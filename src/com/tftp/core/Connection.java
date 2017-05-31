@@ -231,14 +231,15 @@ public class Connection extends SRSocket implements Runnable {
         if (Packet.getPacketType(duplicatePacket) == Packet.PacketTypes.ACK){
             System.out.println("Duplicate ACK Received: Ignoring Packet.");
         } else if (Packet.getPacketType(duplicatePacket) == Packet.PacketTypes.DATA) {
-            System.out.println("Duplicate DATA Received: Resending ACK Packet.");
+            System.out.println("Duplicate DATA Received: Ignoring Packet.");
+            /*
             byte[] bn = new byte[2];
             bn[0] = duplicatePacket.getData()[2];
             bn[1] = duplicatePacket.getData()[3];
 
             DatagramPacket temp = new ACKPacket(duplicatePacket, bn).getDatagram();
             inform(temp, "Resending Corresponding ACK");
-            send(temp);
+            send(temp);*/
         }
     }
 

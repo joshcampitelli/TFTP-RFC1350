@@ -158,10 +158,8 @@ public class Client extends SRSocket {
                 } else if (status == ErrorStatus.DUPLICATE) {
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
-                    System.out.println();
-                    inform(ackPacket, "Resending ACK Packet", true);
-                    send(ackPacket);
-                    response = this.waitForPacket(ackPacket);
+                    response = receive(); //will be different for the wrq since its sending data....
+                    inform(response, "Received Packet");
                     continue;
                 }
 
@@ -237,23 +235,19 @@ public class Client extends SRSocket {
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
                 ErrorStatus status = checkPacket(response, this.connectionTID, dataBlock - 1);
                 if (status == ErrorStatus.FATAL_ERROR) {
-                    System.out.println("FATAL ERROR DETECTED");
                     break;
                 } else if (status == ErrorStatus.NON_FATAL_ERROR) {
-                    System.out.println("NON-FATAL ERROR DETECTED");
+                    System.out.println();
                     if (fileTransfer.isComplete())
                         break;
 
                     response = receive();
                     continue;
                 } else if (status == ErrorStatus.DUPLICATE) {
-                    System.out.println("DUPLICATE PACKET DETECTED");
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
-                    inform(dataPacket, "Resending ACK Packet", true);
-                    send(dataPacket);
-                    response = this.waitForPacket(dataPacket);
-
+                    response = receive(); //will be different for the wrq since its sending data....
+                    inform(response, "Received Packet");
 
                     continue;
                 }
@@ -306,7 +300,7 @@ public class Client extends SRSocket {
             System.out.println("DUPLICATE PACKET RECEIVED");
             return ErrorStatus.DUPLICATE;
         }
-        
+
         inform(temp, "Sending Error Packet");
         send(temp);
         if (temp.getData()[3] == 4) {
