@@ -15,7 +15,7 @@ Breakdown of responsibilities:
 - Ahmed Khattab: Introduced the timing diagrams, helped to create the errors for simulation as an upgrade of iteration 3, added more comments on programming code. 
 - Dario Luzuriaga: Contributed to improving the Error Simulator, helped with the interface consistency, and contributed generating internal and external documents and UML diagrams. 
 - Ahmed Sakr: Contributed refactoring the error simulator, the client, and some of the packing classes. Introduced new code comments. Fixed some pre-existing errors. 
-- Brian Zhang: Helped to integrate the I/O error packets, operated improvements in packet.java and increased the efficiency in handling packets in all instances. 
+- Brian Zhang: Improved upon previous iterations using TA's feedbacks. Helped with network errors.
 
 Iteration 4: 
 ------------
