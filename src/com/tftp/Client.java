@@ -158,7 +158,7 @@ public class Client extends SRSocket {
                 } else if (status == ErrorStatus.DUPLICATE) {
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
-                    response = receive();
+                    response = receive(); //will be different for the wrq since its sending data....
                     continue;
                 }
 
