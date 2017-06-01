@@ -13,19 +13,27 @@ package com.tftp.core.protocol;
  */
 public class BlockNumber {
 
+
     /**
      * Converts the two byte block number into an unsigned integer.
      *
      * @return Unsigned block number
      */
     public static int getBlockNumber(byte[] block) {
-        int blocknum = 0;
-        blocknum += Byte.toUnsignedInt(block[3]);
-        blocknum += Byte.toUnsignedInt(block[2]) << 8;
+        int blockNumber = Byte.toUnsignedInt(block[3]);
+        blockNumber += Byte.toUnsignedInt(block[2]) << 8;
 
-        return blocknum;
+        return blockNumber;
     }
 
+
+    /**
+     * Converts the integer block number into a two-byte two's complement array.
+     *
+     * @param input The block number
+     *
+     * @return The block number, as a byte array
+     */
     public static byte[] getBlockNumber(int input) {
         byte[] data = new byte[2]; // <- assuming "in" value in 0..65535 range and we can use 2 bytes only
 

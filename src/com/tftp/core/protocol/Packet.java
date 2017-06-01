@@ -3,8 +3,6 @@ package com.tftp.core.protocol;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
-import java.util.Arrays;
-
 /**
  * Packet allows for creation and detection of all possible packets encountered in the TFTP protocol (i.e. RRQ,
  * WRQ, DATA, ACK, ERROR, and UNKNOWN).

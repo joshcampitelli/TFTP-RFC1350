@@ -55,7 +55,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @return The Updated DatagramPacket
      */
-    public DatagramPacket produceFrom(DatagramPacket packet, int port, InetAddress address) {
+    DatagramPacket produceFrom(DatagramPacket packet, int port, InetAddress address) {
         return new DatagramPacket(packet.getData(), packet.getLength(), address, port);
     }
 
@@ -111,7 +111,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @return if the packet matches the PacketModification template
      */
-    public boolean isTargetPacket(DatagramPacket packet) {
+    boolean isTargetPacket(DatagramPacket packet) {
         synchronized (modifications) {
             return !modifications.isEmpty() && modifications.peek().isMatchingPacket(packet);
         }
@@ -123,7 +123,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @return The PacketModification at the front of the queue, if exists.
      */
-    public Modification dequeue() {
+    Modification dequeue() {
         synchronized (modifications) {
             if (!modifications.isEmpty()) {
                 return modifications.remove();
@@ -140,7 +140,7 @@ public class ErrorSimulator extends SRSocket {
      *
      * @throws IOException
      */
-    public void simulate() throws IOException, InterruptedException {
+    private void simulate() throws IOException, InterruptedException {
         System.out.printf("ErrorSimulator has successfully launched its operations.\n\n");
         int sessions = 0;
 

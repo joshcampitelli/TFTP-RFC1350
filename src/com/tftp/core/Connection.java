@@ -9,7 +9,6 @@ import com.tftp.exceptions.InvalidPacketException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
-import javax.xml.crypto.Data;
 import java.net.DatagramPacket;
 import java.io.IOException;
 
