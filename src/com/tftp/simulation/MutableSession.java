@@ -24,21 +24,23 @@ import com.tftp.simulation.modifications.PacketModification;
  */
 public class MutableSession extends SRSocket implements Runnable {
 
-    private static int SERVER_PORT = 69;
     private ErrorSimulator simulator;
-    private int source, dest;
+    private int client, server;
 
 
     /**
-     * Constructs the MutableSession by initializing the socket, source and destination, and dispatches the
+     * Constructs the MutableSession by initializing the socket, client and destination, and dispatches the
      * original packet to begin the send/receive cycle.
      *
      * @throws IOException
      */
     public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException, InterruptedException {
         super(String.format("Mutable Session (client tid: %d)", source));
-        this.source = source;
+        int SERVER_PORT = 69;
+
+        this.client = source;
         this.simulator = simulator;
+        this.destination = SERVER_PORT;
 
         DatagramPacket response = calibrate(request);
         inform(response, "Sending Packet");
@@ -56,19 +58,13 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException, InterruptedException {
-        if (simulator.isTargetPacket(client)) {
-            intercept(client, simulator.dequeue(), SERVER_PORT);
-        } else {
-            DatagramPacket server = simulator.produceFrom(client, SERVER_PORT, InetAddress.getLocalHost());
-            inform(server, "Sending Packet");
-            send(server);
-        }
+        process(client);
 
-        DatagramPacket response = receive();
-        inform(response, "Received Packet");
-        this.dest = response.getPort();
+        DatagramPacket server = receive();
+        inform(server, "Received Packet");
+        this.server = server.getPort();
 
-        return simulator.produceFrom(response, client.getPort(), client.getAddress());
+        return simulator.produceFrom(server, client.getPort(), client.getAddress());
     }
 
     private void intercept(DatagramPacket packet, Modification modification, int destination) throws IOException, InterruptedException {
@@ -90,7 +86,7 @@ public class MutableSession extends SRSocket implements Runnable {
                 duplicate(packet, destination);
                 break;
             case ErrorSimulator.SIMULATE_LOST_PACKET:
-                this.destination = (this.destination == this.dest) ? this.source : this.dest;
+                this.destination = (this.destination == this.server) ? this.client : this.server;
                 // don't do anything to simulate lost packet
                 break;
         }
@@ -117,9 +113,6 @@ public class MutableSession extends SRSocket implements Runnable {
         send(dispatch);
     }
 
-    private void lose(DatagramPacket packet, int source) {
-
-    }
 
     /**
      * Attempts to mutate the DatagramPacket depending on its error type.
@@ -147,7 +140,7 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private void simulateInvalidTID(DatagramPacket packet, int dest) throws IOException {
-        SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (dest id: %d)", dest));
+        SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (server id: %d)", dest));
 
         DatagramPacket destination = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
         temp.inform(destination, "Sending Packet");
@@ -219,26 +212,29 @@ public class MutableSession extends SRSocket implements Runnable {
         return newArr;
     }
 
-    int destination;
+    private void process(DatagramPacket packet) throws IOException, InterruptedException{
+        if (simulator.isTargetPacket(packet)) {
+            intercept(packet, simulator.dequeue(), destination);
+        } else {
+            DatagramPacket recipient = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+            inform(recipient, "Sending Packet");
+            send(recipient);
+        }
+
+        destination = (destination == this.server) ? this.client : this.server;
+    }
+
+    private int destination;
 
     @Override
     public void run() {
         try {
-            destination = this.dest;
+            destination = this.server;
 
             while (true) {
                 DatagramPacket packet = receive();
                 inform(packet, "Received Packet");
-
-                if (simulator.isTargetPacket(packet)) {
-                    intercept(packet, simulator.dequeue(), destination);
-                } else {
-                    DatagramPacket recipient = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
-                    inform(recipient, "Sending Packet");
-                    send(recipient);
-                }
-
-                destination = (destination == this.dest) ? this.source : this.dest;
+                process(packet);
             }
         } catch (SocketTimeoutException ex) {
             // socket timed out, thread will die. No need to inform.
