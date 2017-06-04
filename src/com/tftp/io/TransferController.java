@@ -1,6 +1,5 @@
 package com.tftp.io;
 
-import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -9,7 +8,7 @@ import java.util.ArrayList;
  *
  * Methods operating on the data structure must be internally synchronized to guarantee thread-safety.
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 28th, 2017.
  */
 public class TransferController {

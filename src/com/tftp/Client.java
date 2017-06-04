@@ -7,10 +7,12 @@ import java.net.InetAddress;
 import java.io.IOException;
 
 import com.tftp.core.SRSocket;
+import com.tftp.core.protocol.Authentication;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.TFTPError;
 import com.tftp.core.protocol.packets.*;
+import com.tftp.exceptions.AccessViolationException;
 import com.tftp.exceptions.UnknownIOModeException;
 import com.tftp.io.FileTransfer;
 
@@ -21,7 +23,7 @@ import com.tftp.io.FileTransfer;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Josh Campitelli, Ahmed Sakr, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
 public class Client extends SRSocket {
@@ -30,11 +32,12 @@ public class Client extends SRSocket {
     public static boolean verbose;
 
     private int serverPort = 69;
-    private int dataBlock = 1;
-    private int ackBlock = 0;
+    private int block;
     private boolean isNormal = true;
     private FileTransfer fileTransfer;
+    private Authentication authenticator;
     private int connectionTID;
+
     private enum ErrorStatus {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR, DUPLICATE}
 
     public Client() throws IOException {
@@ -45,7 +48,6 @@ public class Client extends SRSocket {
      * Scans the console for user input.
      *
      * @param text the text to display when prompting the user for input
-     *
      * @return the user input as a string
      */
     private String getInput(String text) {
@@ -59,6 +61,7 @@ public class Client extends SRSocket {
      * Sets the instance state of the client regarding where the packet should be sent to.
      * A normal state would send the initial packet to the main server (port id: 69).
      * A testing state would send the initial packet to the error simulator (port id: 23).
+     *
      * @param normal
      */
     public void setNormal(boolean normal) {
@@ -70,10 +73,9 @@ public class Client extends SRSocket {
      * Attempts to establish the transfer with the destination. Once a response has been received, the cycle
      * logic converges to the necessary method (i.e. rrq() or wrq()).
      *
-     * @param filename the operator-provided filename
-     * @param mode the operator-provided mode
+     * @param filename    the operator-provided filename
+     * @param mode        the operator-provided mode
      * @param requestType the operator-provided request type (i.e. RRQ or WRQ)
-     *
      * @throws IOException
      * @throws UnknownIOModeException
      */
@@ -85,37 +87,39 @@ public class Client extends SRSocket {
 
         DatagramPacket packet;
 
-        if (requestType.toLowerCase().equals("r")){
+        if (requestType.toLowerCase().equals("r")) {
             packet = new RRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
 
-            if (!FileTransfer.isWritable()) {
-                send(new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram());
-                System.out.println("File Access Violation, Terminating Transfer.");
+            try {
+                fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
+            } catch (AccessViolationException ex) {
+                System.out.println("Access violation: File not detectable or writable.");
                 return;
             }
 
             inform(packet, "Sending RRQ packet", true);
             send(packet);
-            fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
             rrq();
         } else {
             packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
 
-            if (!FileTransfer.isReadable()) {
-                send(new ERRORPacket(packet, TFTPError.ACCESS_VIOLATION, ("Access violation").getBytes()).getDatagram());
-                System.out.println("File Access Violation, Terminating Transfer.");
-                return;
-            }
+            try {
+                if (!FileTransfer.isFileExisting(new String(filename))) {
+                    System.out.println("The File you wish to write does not exist.");
+                    return;
+                } else if (!FileTransfer.isReadable(new String(filename))) {
+                    System.out.println("File Access Violation, Terminating Transfer.");
+                    return;
+                }
 
-            if (!FileTransfer.isFileExisting(new String(filename))) {
-                System.out.println("The File you wish to write does not exist.");
+                fileTransfer = new FileTransfer(new String(filename), FileTransfer.READ);
+            } catch (AccessViolationException ex) {
+                System.out.println("Access violation: File not detectable or readable.");
                 return;
             }
 
             inform(packet, "Sending WRQ packet", true);
             send(packet);
-
-            fileTransfer = new FileTransfer(new String(filename), FileTransfer.READ);
             wrq();
         }
     }
@@ -124,7 +128,7 @@ public class Client extends SRSocket {
      * Completes the read (RRQ) cycle that has been requested by the operator.
      * Ideally, ACK packets are sent to the destination and DATA packets are received from the destination until
      * the last DATA packet has been read.
-     *
+     * <p>
      * The client is equipped with the knowledge to handle abnormal packets and take the necessary measures. Not
      * all measures are fatal and the client does attempt to recover the authenticity of the connection, if possible.
      *
@@ -134,9 +138,16 @@ public class Client extends SRSocket {
         DatagramPacket response;
         response = receive();
         connectionTID = response.getPort();
-        DatagramPacket ackPacket = null;
+        authenticator = new Authentication(connectionTID);
+        authenticator.setMode("writing");
+        authenticator.setFilename(fileTransfer.getFileName());
+
+        Packet ackPacket;
+        this.block = 0;
 
         while (true) {
+            this.block++;
+
             if (response == null) {
                 System.out.println("DATA Packet was never Received.");
                 break;
@@ -146,7 +157,7 @@ public class Client extends SRSocket {
             inform(response, "Packet Received", true);
 
             if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
-                ErrorStatus status = checkPacket(response, this.connectionTID, ackBlock + 1);
+                ErrorStatus status = checkPacket(response, block);
                 if (status == ErrorStatus.FATAL_ERROR) {
                     break;
                 } else if (status == ErrorStatus.NON_FATAL_ERROR) {
@@ -156,14 +167,15 @@ public class Client extends SRSocket {
                     response = receive(); //Wont timeout if there is an incorrect TID
                     continue;
                 } else if (status == ErrorStatus.DUPLICATE) {
-                    //If response is a duplicate, that indicates that the connection never received the original
-                    //ack and must resend the original ack.
-                    response = receive(); //will be different for the wrq since its sending data....
-                    inform(response, "Received Packet");
+                    // must acknowledge the DATA packet
+                    Packet packet = new ACKPacket(response, new byte[]{response.getData()[2], response.getData()[3]});
+                    inform(packet, "Sending Packet");
+                    send(packet);
+
+                    this.block--; //CRITICAL
+                    response = waitForPacket(null);
                     continue;
                 }
-
-                ackBlock++;
 
                 // unpack the data portion and write it to the file
                 int length = response.getData().length;
@@ -179,10 +191,10 @@ public class Client extends SRSocket {
 
                 fileTransfer.write(data);
 
-                ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(ackBlock)).getDatagram();
-                ackPacket.setPort(serverPort);
+                ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(block));
+                ackPacket.getDatagram().setPort(serverPort);
 
-                inform(ackPacket, "Sending ACK Packet", true);
+                inform(ackPacket, "Sending Packet", true);
                 send(ackPacket);
 
                 if (fileTransfer.isComplete()) {
@@ -192,7 +204,7 @@ public class Client extends SRSocket {
                 response = waitForPacket(ackPacket);
             } else {
                 if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
-                    checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an DATA even though it is.
+                    checkPacket(response, block); //Packet Was Modified and No longer identifies as an DATA even though it is.
                 else
                     troubleshoot(response);
 
@@ -209,20 +221,24 @@ public class Client extends SRSocket {
      * Completes the write (WRQ) cycle that has been requested by the operator.
      * Ideally, DATA packets are sent to the destination and ACK packets are received from the destination until
      * the last DATA packet has been reached.
-     *
+     * <p>
      * The client is equipped with the knowledge to handle abnormal packets and take the necessary measures. Not
      * all measures are fatal and the client does attempt to recover the authenticity of the connection, if possible.
      *
      * @throws IOException
      */
     private void wrq() throws IOException {
-        System.out.println(getLocalPort());
         DatagramPacket response;
         response = receive();
         connectionTID = response.getPort();
-        DatagramPacket dataPacket = null;
+        authenticator = new Authentication(connectionTID);
+        authenticator.setMode("reading");
+        authenticator.setFilename(fileTransfer.getFileName());
 
-        while(true) {
+        Packet dataPacket;
+        this.block = 0;
+
+        while (true) {
             if (response == null) {
                 System.out.println("ACK Packet was never Received.");
                 break;
@@ -230,11 +246,9 @@ public class Client extends SRSocket {
 
             serverPort = response.getPort();
             inform(response, "Packet Received", true);
-            byte[] data = fileTransfer.read();
-
             //Ensure the packet received from the server is of type ACK
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
-                ErrorStatus status = checkPacket(response, this.connectionTID, dataBlock - 1);
+                ErrorStatus status = checkPacket(response, block);
                 if (status == ErrorStatus.FATAL_ERROR) {
                     break;
                 } else if (status == ErrorStatus.NON_FATAL_ERROR) {
@@ -247,28 +261,28 @@ public class Client extends SRSocket {
                 } else if (status == ErrorStatus.DUPLICATE) {
                     //If response is a duplicate, that indicates that the connection never received the original
                     //ack and must resend the original ack.
-                    response = receive(); //will be different for the wrq since its sending data....
-                    inform(response, "Received Packet");
-
+                    response = receive();
                     continue;
                 }
-
-                dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(dataBlock), data).getDatagram();
-                dataPacket.setData(shrink(dataPacket.getData(), fileTransfer.lastBlockSize() + 4));
-                dataPacket.setPort(serverPort);
-
-                inform(dataPacket, "Sending DATA Packet", true);
-                send(dataPacket);
-                dataBlock++;
 
                 if (fileTransfer.isComplete()) {
                     break;
                 }
 
+                this.block++;
+                byte[] data = fileTransfer.read();
+                data = shrink(data, fileTransfer.lastBlockSize());
+
+                dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(block), data);
+                dataPacket.getDatagram().setPort(serverPort);
+
+                inform(dataPacket, "Sending Packet", true);
+                send(dataPacket);
+
                 response = waitForPacket(dataPacket);
             } else {
                 if (Packet.getPacketType(response) != Packet.PacketTypes.ERROR)
-                    checkPacket(response, this.connectionTID, dataBlock - 1); //Packet Was Modified and No longer identifies as an ACK even though it is.
+                    checkPacket(response, block); //Packet Was Modified and No longer identifies as an ACK even though it is.
                 else
                     troubleshoot(response);
 
@@ -281,35 +295,33 @@ public class Client extends SRSocket {
     }
 
     /**
-     * The checkPacket method calls the parseUnknownPacket on SRSocket which detects packet errors, this method then
+     * The checkPacket method calls the validatePacket on SRSocket which detects packet errors, this method then
      * determines whether there was an error and returns the type. It also makes a call to the errorDetected method.
      *
-     * @param received the DatagramPacket which is being tested for errors.
-     * @param expectedTID the expected value for the TID.
+     * @param received    the DatagramPacket which is being tested for errors.
      * @param blockNumber the expected value for the Block Number.
      * @return ErrorStatus enum {FATAL_ERROR, NON_FATAL_ERROR, NO_ERROR}
      * @throws IOException
      */
-    private ErrorStatus checkPacket(DatagramPacket received, int expectedTID, int blockNumber) throws IOException {
+    private ErrorStatus checkPacket(DatagramPacket received, int blockNumber) throws IOException {
         //Parses Received ACK & DATA Packets to check for Unknown TID, DATA size > 512, undefined opcodes, & incorrect block numbers.
-        DatagramPacket temp = super.parseUnknownPacket(received, expectedTID, blockNumber);
-        //If temp is a duplicate packet...
-        if (temp == null) {
+        if (authenticator.verify(received, blockNumber)) {
             return ErrorStatus.NO_ERROR;
-        }
-        if (Packet.getPacketType(temp) == Packet.PacketTypes.ACK || Packet.getPacketType(temp) == Packet.PacketTypes.DATA) {
+        } else if (authenticator.isDuplicate()) {
             System.out.println("Duplicate Packet Received: Ignoring Packet.");
             return ErrorStatus.DUPLICATE;
-        }
-
-        inform(temp, "Sending Error Packet");
-        send(temp);
-        if (temp.getData()[3] == 4) {
-            System.out.println("Terminating Client...");
-            return ErrorStatus.FATAL_ERROR;    //Fatal Error Detected (Error Code: 04)
         } else {
-            System.out.println("Ignoring Packet, Continuing Execution.");
-            return ErrorStatus.NON_FATAL_ERROR; //Non-Fatal Error Detected (Error Code: 05)
+            Packet result = authenticator.getResult();
+            inform(result, "Sending Error Packet");
+            send(result);
+
+            if (authenticator.getError() != TFTPError.UNKNOWN_TRANSFER_ID) {
+                System.out.println("Terminating Client...");
+                return ErrorStatus.FATAL_ERROR;
+            } else {
+                System.out.println("Ignoring Packet, Continuing Execution.");
+                return ErrorStatus.NON_FATAL_ERROR;
+            }
         }
     }
 
@@ -340,7 +352,6 @@ public class Client extends SRSocket {
         try {
             Client client = new Client();
             FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
-            if (FileTransfer.parentDirectory.equalsIgnoreCase("q"));
             System.out.println("Input 'q' during any instruction to quit.");
             while (true) {
                 String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");

@@ -11,8 +11,6 @@ import com.tftp.Client;
 import com.tftp.Server;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
-import com.tftp.core.protocol.TFTPError;
-import com.tftp.core.protocol.packets.ERRORPacket;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
@@ -21,7 +19,7 @@ import com.tftp.core.protocol.packets.ERRORPacket;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
 public class SRSocket extends DatagramSocket {
@@ -95,14 +93,14 @@ public class SRSocket extends DatagramSocket {
      * @return DatagramPacket, the packet which is received
      * @throws IOException although catches the SocketTimeoutException
      */
-    protected DatagramPacket waitForPacket(DatagramPacket retransmitPacket) throws IOException {
+    protected DatagramPacket waitForPacket(Packet retransmitPacket) throws IOException {
         DatagramPacket response = null;
         for (int i = 0; i < RETRANSMIT_NUM; i++) {
             try {
                 response = receive(TIMEOUT_TIME);
                 break;
             } catch (SocketTimeoutException e) {
-                if (Packet.getPacketType(retransmitPacket) == Packet.PacketTypes.DATA) {
+                if (retransmitPacket != null && retransmitPacket.getType() == Packet.PacketTypes.DATA) {
                     inform(retransmitPacket, "Resending DATA Packet");
                     send(retransmitPacket);
                 }
@@ -113,11 +111,8 @@ public class SRSocket extends DatagramSocket {
         return response;
     }
 
-    public void send(DatagramPacket packet) throws IOException {
-        super.send(packet);
-    }
-    public void send(InetAddress host, int port, byte[] data) throws IOException {
-        this.send(new DatagramPacket(data, data.length, host, port));
+    public void send(Packet packet) throws IOException {
+        super.send(packet.getDatagram());
     }
 
     public void inform(DatagramPacket packet, String event, boolean extra) {
@@ -127,13 +122,22 @@ public class SRSocket extends DatagramSocket {
 
         int len = packet.getLength();
         System.out.printf("%s: %s:\n", this.name, event);
-        System.out.printf("%s Host Address: %s, Host port: %d, Length: %d\n",
+        System.out.printf("Packet type: %s, Block Number: %d\n", Packet.getPacketType(packet), BlockNumber.getBlockNumber(packet.getData()));
+        System.out.printf("%s Host: %s:%d, Length: %d\n",
                         event.contains("Send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
         System.out.printf("Data (as string): %s\n", new String(packet.getData(), 0, packet.getData().length));
+
         if (extra) {
-            System.out.printf("Data (as bytes): %s\n", Arrays.toString(packet.getData()));
+            System.out.printf("Data (as bytes): %s\n\n", Arrays.toString(packet.getData()));
         }
-        System.out.printf("Blocknumber: %s\n\n", BlockNumber.getBlockNumber(packet.getData()));
+    }
+
+    public void inform(Packet packet, String event, boolean extra) {
+        inform(packet.getDatagram(), event, extra);
+    }
+
+    public void inform(Packet packet, String event) {
+        inform(packet.getDatagram(), event, false);
     }
 
     public void inform(DatagramPacket packet, String event) {
@@ -153,64 +157,8 @@ public class SRSocket extends DatagramSocket {
         }
 
         byte[] arr1 = new byte[newLength];
-        for (int i = 0; i < arr1.length; i++) {
-            arr1[i] = arr[i];
-        }
+        System.arraycopy(arr, 0, arr1, 0, newLength);
 
         return arr1;
-    }
-
-    /**
-     *
-     * @param received DatagramPacket the Client received
-     * @param expectedTID The TID that the packet is expected to come from
-     * @return DatagramPacket
-     *
-     * parseUnknownPacket parses the packet given to it and determines which type of error it is.
-     *
-     * Error Packet Type 4: Incorrect Packet ie. Opcode error, Packet Size Error, ACKPacket Error.
-     *                      Client Shall Terminate.
-     *
-     * Error Packet Type 5: Incorrect TID, meaning the Connection the Client sent a Packet to was not
-     *                      expecting a Packet from and returned an Error Packet Type 5 to said Client.
-     *                      In such case the Client shall terminate.
-     *
-     * If any Client has received an Error Packet this means that either the data received from the Server
-     * was corrupt or the Server was not expecting Packets from this Client.
-     */
-    public DatagramPacket parseUnknownPacket(DatagramPacket received, int expectedTID, int blockNumber) {
-        byte[] data = received.getData();
-        String errorMsg = "";
-        DatagramPacket errorPacket;
-        ERRORPacket  receivedPacket = new ERRORPacket(received);
-
-        //System.out.println("Expected TID: " + expectedTID + ", actual TID: " + received.getPort());
-        if (received.getPort() != expectedTID) { //Incorrect TID
-            errorMsg = "Incorrect TID";
-            receivedPacket.setDatagram(TFTPError.UNKNOWN_TRANSFER_ID, errorMsg.getBytes());
-            errorPacket = receivedPacket.getDatagram();
-        } else if (data.length > 516) {             //Error type 4: corrupt data
-            errorMsg = "Data greater than 512";
-            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.getDatagram();
-        } else if (data[1] > 5) {                   //Opcode 06 or greater is an undefined opCode
-            errorMsg = "Undefined OpCode";
-            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.getDatagram();
-        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) > blockNumber) {
-            //Block Number is greater than the expected, indicating that the packet is an error.
-            errorMsg = "Incorrect Block Number";
-            receivedPacket.setDatagram(TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes());
-            errorPacket = receivedPacket.getDatagram();
-        } else if (blockNumber != -1 && BlockNumber.getBlockNumber(received.getData()) < blockNumber) {
-        //Block Number is less than the expected, indicating that the packet is a duplicate.
-            return received; //Returning Received indicates a duplicate packet was received.
-        } else {
-            errorPacket = null;
-        }
-        if (errorPacket != null)
-            System.out.println("Error Packet Detected: Error Code: 0" + errorPacket.getData()[3] + ", Error Message: " + errorMsg);
-
-        return errorPacket;
     }
 }

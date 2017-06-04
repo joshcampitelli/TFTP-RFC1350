@@ -7,7 +7,7 @@ package com.tftp.exceptions;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 5th, 2017.
  */
 @SuppressWarnings("serial")

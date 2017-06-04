@@ -1,13 +1,11 @@
 package com.tftp.io;
 
+import java.io.*;
 import java.lang.AutoCloseable;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Scanner;
 
+import com.tftp.exceptions.AccessViolationException;
 import com.tftp.exceptions.UnknownIOModeException;
 
 /**
@@ -18,7 +16,7 @@ import com.tftp.exceptions.UnknownIOModeException;
  * FileTransfer determines the last block by reading its length. If its length is less than BLOCK_SIZE,
  * then the last block has been received and the class shall terminate after processing it.
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Josh Campitelli, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 6th, 2017.
  */
 public class FileTransfer {
@@ -38,7 +36,7 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    public FileTransfer(String file, int mode) throws FileNotFoundException, UnknownIOModeException {
+    public FileTransfer(String file, int mode) throws FileNotFoundException, AccessViolationException, UnknownIOModeException {
         if (mode == WRITE && isFileExisting(file)) {
             file = getAdjustedFilename(file);
         }
@@ -73,7 +71,7 @@ public class FileTransfer {
         setStartingDirectory(directory, true);
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("The starting directory for transfering files:");
+        System.out.println("The starting directory for transferring files:");
         System.out.printf("\t%s\n\n", parentDirectory);
         System.out.printf("If you wish to keep it, hit enter. Otherwise, Please specify the absolute starting directory path: ");
 
@@ -85,39 +83,60 @@ public class FileTransfer {
 
 
     /**
-     * Checks if the parent directory is writable.
+     * Checks if the file is writable.
      *
-     * @return the write privileges of the parent directory
+     * @return the write privileges of the file
      */
-    public static boolean isWritable() {
-        try {
-            FileTransfer ft = new FileTransfer("test access.txt", FileTransfer.WRITE);
-            ft.delete();
-            return true;
-        } catch (IOException | UnknownIOModeException ex) {
-            return false;
+    public static boolean isWritable(String filename) {
+        File f;
+        if (parentDirectory.endsWith("/") || parentDirectory.endsWith("\\")) {
+            f = new File(parentDirectory + filename);
+        } else {
+            f = new File(parentDirectory + "\\" + filename);
         }
+
+        if (f.exists()) {
+            return Files.isWritable(f.toPath());
+        } else {
+            try {
+                if (f.createNewFile()) {
+                    return f.delete();
+                }
+            } catch (IOException ex) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
 
     /**
-     * Checks if the parent directory if readable.
+     * Checks if the file is readable.
      *
      * @return the read privileges of the parent directory
      */
-    public static boolean isReadable() {
-        try {
-            FileTransfer ft = new FileTransfer("test access.txt", FileTransfer.READ);
-            ft.delete();
-            return true;
-
-        } catch (IOException | UnknownIOModeException ex) {
-            if (ex instanceof FileNotFoundException) {
-                return true;
-            }
-            //ex.printStackTrace();
-            return false;
+    public static boolean isReadable(String filename) {
+        File f;
+        if (parentDirectory.endsWith("/") || parentDirectory.endsWith("\\")) {
+            f = new File(parentDirectory + filename);
+        } else {
+            f = new File(parentDirectory + "\\" + filename);
         }
+
+        if (f.exists()) {
+            return Files.isReadable(f.toPath());
+        } else {
+            try {
+                if (f.createNewFile()) {
+                    return f.delete();
+                }
+            } catch (IOException ex) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -128,9 +147,13 @@ public class FileTransfer {
      * @return  true    if the file exists
      *          false   otherwise
      */
-    public static boolean isFileExisting(String file) {
+    public static boolean isFileExisting(String file) throws AccessViolationException {
         File f = new File(parentDirectory + "\\" + file);
-        return f.exists() && !f.isDirectory();
+        if (!Files.exists(f.toPath()) && !Files.notExists(f.toPath())) {
+            throw new AccessViolationException("File Access Denied");
+        } else {
+            return Files.exists(f.toPath()) && !f.isDirectory();
+        }
     }
 
 
@@ -165,7 +188,7 @@ public class FileTransfer {
     *
     * @return the adjusted, non-existing filename
     */
-    private String getAdjustedFilename(String filename) {
+    private String getAdjustedFilename(String filename) throws AccessViolationException {
         int i = 0;
         String adjusted = filename;
         while (isFileExisting(adjusted)) {
@@ -274,14 +297,34 @@ public class FileTransfer {
      *
      * @throws UnknownIOModeException a rogue mode value was provided, which is critical to the operations.
      */
-    private void initialize(int mode) throws FileNotFoundException, UnknownIOModeException {
+    private void initialize(int mode) throws FileNotFoundException, AccessViolationException, UnknownIOModeException {
         if (mode == READ) {
-            stream = new FileInputStream(this.file.getAbsolutePath());
+            try {
+                stream = new FileInputStream(this.file.getAbsolutePath());
+            } catch (FileNotFoundException ex) {
+                if (!isFileExisting(this.file.getName())) {
+                    throw ex;
+                } else {
+                    throw new AccessViolationException("File Access Denied: Unable to read.");
+                }
+            }
         } else if (mode == WRITE) {
-            stream = new FileOutputStream(this.file.getAbsolutePath());
+            try {
+                stream = new FileOutputStream(this.file.getAbsolutePath());
+            } catch (FileNotFoundException ex) {
+                throw new AccessViolationException("File Access Denied: Unable to write.");
+            }
         } else {
             throw new UnknownIOModeException("I/O Mode provided is not recognized!");
         }
+    }
+
+
+    /**
+     * Closes the stream on this instance, signalling the end to this transfer.
+     */
+    public void close() {
+        done();
     }
 
     /**
@@ -289,8 +332,10 @@ public class FileTransfer {
      */
     private void done(){
         try {
-            stream.close();
-            stream = null;
+            if (stream != null) {
+                stream.close();
+                stream = null;
+            }
         } catch(Exception e) {
             e.printStackTrace();
         }

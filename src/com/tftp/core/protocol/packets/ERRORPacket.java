@@ -3,9 +3,17 @@ package com.tftp.core.protocol.packets;
 import java.net.DatagramPacket;
 import com.tftp.core.protocol.Packet;
 
-public class ERRORPacket extends Packet {
 
-    private DatagramPacket errorPacket;
+/**
+ * ERRORPacket is one type of TFTP packet that is used for informing the other side of a detected error.
+ *
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Brian Zhang, Ahmed Sakr, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
+ * @since May the 18th, 2017.
+ */
+public class ERRORPacket extends Packet {
 
     public ERRORPacket(DatagramPacket packet) {
         super(packet);
@@ -13,17 +21,9 @@ public class ERRORPacket extends Packet {
 
     public ERRORPacket(DatagramPacket packet, byte errorCode, byte[] errorMsg) {
         super(packet);
-        errorPacket = createPacket(prepare(errorCode, errorMsg));
+        setData(prepare(errorCode, errorMsg));
     }
 
-    @Override
-    public DatagramPacket getDatagram() {
-        return errorPacket;
-    }
-
-    public void setDatagram(byte errorCode, byte[] errorMsg) {
-        errorPacket = createPacket(prepare(errorCode, errorMsg));
-    }
 
     private byte[] prepare(byte errorCode, byte[] errorMsg) {
         byte[] error = new byte[5 + errorMsg.length];
@@ -34,4 +34,16 @@ public class ERRORPacket extends Packet {
 
         return error;
     }
+
+
+    @Override
+    public PacketTypes getType() {
+        return PacketTypes.ERROR;
+    }
+
+    @Override
+    public boolean isBlockNumbered() {
+        return false;
+    }
+
 }

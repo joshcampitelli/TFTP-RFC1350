@@ -6,7 +6,7 @@ package com.tftp.core.protocol;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, and Brian Zhang
  * @since May the 28th, 2017.
  */
 public class TFTPError {

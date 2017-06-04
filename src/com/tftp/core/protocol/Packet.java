@@ -10,7 +10,7 @@ import java.net.InetAddress;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Brian Zhang, Josh Campitelli, Ahmed Sakr, Ahmed Khattab, Dario Luzuriaga
  * @since May the 8th, 2017.
  */
 public abstract class Packet {
@@ -26,8 +26,18 @@ public abstract class Packet {
         this.packet = packet;
     }
 
+    public abstract PacketTypes getType();
+    public abstract boolean isBlockNumbered();
 
-    public abstract DatagramPacket getDatagram();
+
+    protected void setData(byte[] array) {
+        this.packet.setData(array);
+    }
+
+    public DatagramPacket getDatagram() {
+        return this.packet;
+    }
+
 
     /**
      *

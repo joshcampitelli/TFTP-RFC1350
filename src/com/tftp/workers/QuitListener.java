@@ -9,7 +9,7 @@ import com.tftp.Server;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Ahmed Khattab, Josh Campitelli, Brian Zhang, Dario Luzuriaga
  * @since May the 8th, 2017.
  */
 public class QuitListener extends Thread {

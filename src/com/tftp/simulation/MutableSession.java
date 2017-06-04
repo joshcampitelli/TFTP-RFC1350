@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 
 import com.tftp.core.SRSocket;
+import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.Packet.PacketTypes;
 import com.tftp.core.protocol.TFTPError;
 import com.tftp.simulation.modifications.NetworkModification;
 import com.tftp.simulation.modifications.PacketModification;
@@ -19,13 +21,14 @@ import com.tftp.simulation.modifications.PacketModification;
  * Course: Real Time Concurrent Systems
  * Term: Summer 2017
  *
- * @author Josh Campitelli, Ahmed Khattab, Dario Luzuriaga, Ahmed Sakr, and Brian Zhang
+ * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 14th, 2017.
  */
 public class MutableSession extends SRSocket implements Runnable {
 
     private ErrorSimulator simulator;
     private int client, server;
+    private boolean active = true;
 
 
     /**
@@ -78,39 +81,77 @@ public class MutableSession extends SRSocket implements Runnable {
     private void network(DatagramPacket packet, NetworkModification modification, int destination) throws IOException, InterruptedException {
         switch (modification.getErrorType()) {
             case ErrorSimulator.SIMULATE_DELAYED_PACKET:
-                delay(packet, destination);
+                delay(packet, modification.getPacketType(), destination);
                 break;
             case ErrorSimulator.SIMULATE_DUPLICATED_PACKET:
 
                 // send the packet twice
-                duplicate(packet, destination);
+                duplicate(packet, modification.getPacketType(), destination);
                 break;
             case ErrorSimulator.SIMULATE_LOST_PACKET:
-                this.destination = (this.destination == this.server) ? this.client : this.server;
-                // don't do anything to simulate lost packet
+                if (modification.getPacketType() == PacketTypes.DATA) {
+
+                    // we need to remain listening on this source as it sent the DATA packet, meaning
+                    // it will resend the DATA packet. This statement effectively keeps this.destination
+                    // to the same value after it returns to process()
+                    this.destination = (this.destination == this.server) ? this.client : this.server;
+                }
                 break;
         }
     }
 
-    private void delay(DatagramPacket packet, int destination) throws InterruptedException, IOException {
+    private void delay(DatagramPacket packet, PacketTypes type, int destination) throws InterruptedException, IOException {
         Thread.sleep(6000);
         DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
         inform(dispatch, "Sending Packet");
-        send(dispatch);
 
-        DatagramPacket retransmitted = receive();
-        retransmitted = simulator.produceFrom(retransmitted, destination, InetAddress.getLocalHost());
-        inform(retransmitted, "Sending retransmitted Packet");
-        send(retransmitted);
+        if (type == PacketTypes.DATA) {
+            DatagramPacket retransmitted = receive();
+            retransmitted = simulator.produceFrom(retransmitted, destination, InetAddress.getLocalHost());
+            inform(retransmitted, "Sending retransmitted Packet");
+
+            send(dispatch);
+            send(retransmitted);
+
+            this.destination = (this.destination == this.server) ? this.client : this.server;
+
+            DatagramPacket response = receive();
+            response = simulator.produceFrom(response, this.destination, InetAddress.getLocalHost());
+            inform(response, "Sending retransmitted Packet");
+
+            DatagramPacket response2 = receive();
+            response2 = simulator.produceFrom(response2, this.destination, InetAddress.getLocalHost());
+            inform(response2, "Sending retransmitted Packet");
+
+            send(response);
+            send(response2);
+        } else {
+            send(dispatch);
+        }
     }
 
-    private void duplicate(DatagramPacket packet, int destination) throws IOException {
+    private void duplicate(DatagramPacket packet, PacketTypes type, int destination) throws IOException {
         DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
         inform(dispatch, "Sending Packet");
+        inform(dispatch, "Sending Duplicate Packet");
+
+        send(dispatch);
         send(dispatch);
 
-        inform(dispatch, "Sending Duplicate Packet");
-        send(dispatch);
+        if (type == PacketTypes.DATA) {
+            this.destination = (this.destination == this.server) ? this.client : this.server;
+
+            DatagramPacket response = receive();
+            response = simulator.produceFrom(response, this.destination, InetAddress.getLocalHost());
+            inform(response, "Sending retransmitted Packet");
+
+            DatagramPacket response2 = receive();
+            response2 = simulator.produceFrom(response2, this.destination, InetAddress.getLocalHost());
+            inform(response2, "Sending retransmitted Packet");
+
+            send(response);
+            send(response2);
+        }
     }
 
 
@@ -125,6 +166,7 @@ public class MutableSession extends SRSocket implements Runnable {
     private void mutate(DatagramPacket packet, PacketModification modification, int destination) throws IOException {
         if (modification.getErrorId() == TFTPError.UNKNOWN_TRANSFER_ID) {
             simulateInvalidTID(packet, destination);
+            active = false;
         } else if (modification.getErrorId() == TFTPError.ILLEGAL_TFTP_OPERATION) {
             simulateIllegalTftpOperation(packet, modification, destination);
         }
@@ -149,6 +191,11 @@ public class MutableSession extends SRSocket implements Runnable {
         DatagramPacket response = temp.receive();
         temp.inform(response, "Received Packet");
         temp.close();
+
+        dest = dest == this.client ? this.server : this.client;
+        DatagramPacket result = simulator.produceFrom(response, dest, InetAddress.getLocalHost());
+        inform(result, "Sending Response");
+        send(result);
     }
 
 
@@ -231,7 +278,7 @@ public class MutableSession extends SRSocket implements Runnable {
         try {
             destination = this.server;
 
-            while (true) {
+            while (active) {
                 DatagramPacket packet = receive();
                 inform(packet, "Received Packet");
                 process(packet);

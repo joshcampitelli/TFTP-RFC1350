@@ -5,6 +5,17 @@ import java.net.DatagramPacket;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
 
+
+/**
+ * Modification is an abstract class that defines and provides the basic logic for any subclass that wishes
+ * to manipulate and create a fault in the packet transmission.
+ *
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
+ * @since May the 16th, 2017.
+ */
 public abstract class Modification {
     private int blockNumber = -1;
     private byte errorType = -1;
@@ -41,6 +52,12 @@ public abstract class Modification {
         return this.errorType;
     }
 
+
+    public PacketTypes getPacketType() {
+        return this.packetType;
+    }
+
+
     /**
      * Checks if the DatagramPacket target matches the lookout variables.
      *
@@ -48,7 +65,7 @@ public abstract class Modification {
      *          false   otherwise
      */
     public boolean isMatchingPacket(DatagramPacket target) {
-        if (packetType == PacketTypes.RRQ || packetType == PacketTypes.WRQ) {
+        if (packetType == PacketTypes.RRQ || packetType == PacketTypes.WRQ || packetType == PacketTypes.ERROR) {
             return Packet.getPacketType(target) == packetType;
         } else {
             int blocknum = BlockNumber.getBlockNumber(target.getData());

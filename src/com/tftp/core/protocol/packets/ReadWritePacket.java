@@ -2,7 +2,23 @@ package com.tftp.core.protocol.packets;
 
 import com.tftp.core.protocol.Packet;
 
+import java.net.DatagramPacket;
+
+
+/**
+ * ReadWritePacket is an abstract TFTP Packet class that engulfs two other packets: RRQPacket and WRQPacket.
+ *
+ * Course: Real Time Concurrent Systems
+ * Term: Summer 2017
+ *
+ * @author Brian Zhang, Ahmed Sakr, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
+ * @since May the 18th, 2017.
+ */
 public abstract class ReadWritePacket extends Packet {
+
+    public ReadWritePacket(DatagramPacket packet) {
+        super(packet);
+    }
 
     protected abstract byte[] form(byte[] mode, byte[] filename);
     protected byte[] prepare(byte rw, byte[] mode, byte[] filename) {
