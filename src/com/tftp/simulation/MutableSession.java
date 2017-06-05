@@ -105,7 +105,7 @@ public class MutableSession extends SRSocket implements Runnable {
         DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
         inform(dispatch, "Sending Packet");
 
-        if (type == PacketTypes.DATA) {
+        if (isDominantPacket(type)) {
             DatagramPacket retransmitted = receive();
             retransmitted = simulator.produceFrom(retransmitted, destination, InetAddress.getLocalHost());
             inform(retransmitted, "Sending retransmitted Packet");
@@ -152,6 +152,10 @@ public class MutableSession extends SRSocket implements Runnable {
             send(response);
             send(response2);
         }
+    }
+
+    private boolean isDominantPacket(PacketTypes type) {
+        return type == PacketTypes.RRQ || type == PacketTypes.WRQ || type == PacketTypes.DATA;
     }
 
 

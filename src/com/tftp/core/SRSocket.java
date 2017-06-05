@@ -11,6 +11,7 @@ import com.tftp.Client;
 import com.tftp.Server;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
+import com.tftp.core.protocol.Packet.PacketTypes;
 
 /**
  * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
@@ -100,8 +101,9 @@ public class SRSocket extends DatagramSocket {
                 response = receive(TIMEOUT_TIME);
                 break;
             } catch (SocketTimeoutException e) {
-                if (retransmitPacket != null && retransmitPacket.getType() == Packet.PacketTypes.DATA) {
-                    inform(retransmitPacket, "Resending DATA Packet");
+                if (retransmitPacket != null &&
+                        (retransmitPacket.getType() != PacketTypes.ERROR && retransmitPacket.getType() != PacketTypes.ACK)) {
+                    inform(retransmitPacket, String.format("Resending %s Packet", retransmitPacket.getType()));
                     send(retransmitPacket);
                 }
             }
@@ -121,10 +123,18 @@ public class SRSocket extends DatagramSocket {
         }
 
         int len = packet.getLength();
+        PacketTypes type = Packet.getPacketType(packet);
         System.out.printf("%s: %s:\n", this.name, event);
-        System.out.printf("Packet type: %s, Block Number: %d\n", Packet.getPacketType(packet), BlockNumber.getBlockNumber(packet.getData()));
+        System.out.printf("Packet type: %s.", Packet.getPacketType(packet));
+
+        if (type == PacketTypes.DATA || type == PacketTypes.ACK) {
+            System.out.printf(" Block Number: %d\n", BlockNumber.getBlockNumber(packet.getData()));
+        } else {
+            System.out.printf("\n");
+        }
+
         System.out.printf("%s Host: %s:%d, Length: %d\n",
-                        event.contains("Send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
+                        event.toLowerCase().contains("send") ? "To" : "From", packet.getAddress(), packet.getPort(), len);
         System.out.printf("Data (as string): %s\n", new String(packet.getData(), 0, packet.getData().length));
 
         if (extra) {

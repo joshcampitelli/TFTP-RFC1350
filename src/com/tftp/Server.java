@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import com.tftp.core.SRSocket;
 import com.tftp.core.Connection;
+import com.tftp.core.protocol.IPAddress;
 import com.tftp.io.FileTransfer;
 import com.tftp.io.TransferController;
 import com.tftp.workers.QuitListener;
@@ -33,6 +34,7 @@ public class Server extends SRSocket {
 
     public Server() throws IOException {
         super("Server, Socket 'R'", RECEIVE_PORT);
+        System.out.println(getLocalAddress());
         controller = new TransferController();
     }
 
@@ -103,7 +105,6 @@ public class Server extends SRSocket {
         Server server = null;
 
         try {
-
             server = new Server();
             FileTransfer.setup(FileTransfer.SERVER_DIRECTORY);
 

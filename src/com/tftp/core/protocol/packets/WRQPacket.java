@@ -2,6 +2,7 @@ package com.tftp.core.protocol.packets;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 
 /**
@@ -20,8 +21,8 @@ public class WRQPacket extends ReadWritePacket {
         super(packet);
     }
 
-    public WRQPacket(byte[] mode, byte[] filename, InetAddress address, int port) {
-        super(new DatagramPacket(new byte[516], 516, address, port));
+    public WRQPacket(byte[] mode, byte[] filename, InetSocketAddress address) {
+        super(new DatagramPacket(new byte[516], 516, address));
         setData(form(mode, filename));
     }
 

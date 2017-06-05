@@ -7,10 +7,7 @@ import java.net.InetAddress;
 import java.io.IOException;
 
 import com.tftp.core.SRSocket;
-import com.tftp.core.protocol.Authentication;
-import com.tftp.core.protocol.BlockNumber;
-import com.tftp.core.protocol.Packet;
-import com.tftp.core.protocol.TFTPError;
+import com.tftp.core.protocol.*;
 import com.tftp.core.protocol.packets.*;
 import com.tftp.exceptions.AccessViolationException;
 import com.tftp.exceptions.UnknownIOModeException;
@@ -79,16 +76,16 @@ public class Client extends SRSocket {
      * @throws IOException
      * @throws UnknownIOModeException
      */
-    private void transfer(byte[] filename, byte[] mode, String requestType) throws IOException, UnknownIOModeException {
+    private void transfer(byte[] filename, byte[] mode, String ip, String requestType) throws IOException, UnknownIOModeException {
         int port = serverPort;
         if (!this.isNormal) {
             port = ERRORSIMULATOR_PORT;
         }
 
-        DatagramPacket packet;
+        Packet packet;
 
         if (requestType.toLowerCase().equals("r")) {
-            packet = new RRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
+            packet = new RRQPacket(mode, filename, IPAddress.toInetSocketAddress(ip, port));
 
             try {
                 fileTransfer = new FileTransfer(new String(filename), FileTransfer.WRITE);
@@ -97,11 +94,18 @@ public class Client extends SRSocket {
                 return;
             }
 
-            inform(packet, "Sending RRQ packet", true);
+            inform(packet, "Sending Packet", true);
             send(packet);
-            rrq();
+
+            DatagramPacket response = waitForPacket(packet);
+            if (response == null) {
+                System.out.println("[IMPORTANT] Server never responded to request.");
+                return;
+            }
+
+            rrq(response);
         } else {
-            packet = new WRQPacket(mode, filename, InetAddress.getLocalHost(), port).getDatagram();
+            packet = new WRQPacket(mode, filename, IPAddress.toInetSocketAddress(ip, port));
 
             try {
                 if (!FileTransfer.isFileExisting(new String(filename))) {
@@ -118,9 +122,16 @@ public class Client extends SRSocket {
                 return;
             }
 
-            inform(packet, "Sending WRQ packet", true);
+            inform(packet, "Sending Packet", true);
             send(packet);
-            wrq();
+
+            DatagramPacket response = waitForPacket(packet);
+            if (response == null) {
+                System.out.println("[IMPORTANT] Server never responded to request.");
+                return;
+            }
+
+            wrq(response);
         }
     }
 
@@ -134,9 +145,7 @@ public class Client extends SRSocket {
      *
      * @throws IOException
      */
-    private void rrq() throws IOException {
-        DatagramPacket response;
-        response = receive();
+    private void rrq(DatagramPacket response) throws IOException {
         connectionTID = response.getPort();
         authenticator = new Authentication(connectionTID);
         authenticator.setMode("writing");
@@ -227,9 +236,7 @@ public class Client extends SRSocket {
      *
      * @throws IOException
      */
-    private void wrq() throws IOException {
-        DatagramPacket response;
-        response = receive();
+    private void wrq(DatagramPacket response) throws IOException {
         connectionTID = response.getPort();
         authenticator = new Authentication(connectionTID);
         authenticator.setMode("reading");
@@ -368,6 +375,11 @@ public class Client extends SRSocket {
                     break;
                 }
 
+                String ip = client.getInput("Please enter the IP of the destination: ");
+                while (!IPAddress.isValidIP(ip))  {
+                    ip = client.getInput("Please enter the IP of the destination: ");
+                }
+
                 String newTransfer = "y";
                 String requestType = "";
                 while (newTransfer.equalsIgnoreCase("y")) {
@@ -381,7 +393,7 @@ public class Client extends SRSocket {
 
                     byte[] filename = client.getInput("Enter file name: ").getBytes();
                     byte[] mode = "octet".getBytes();
-                    client.transfer(filename, mode, requestType);
+                    client.transfer(filename, mode, ip, requestType);
                     client.close();
 
                     client = new Client();
