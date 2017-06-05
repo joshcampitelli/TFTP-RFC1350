@@ -35,6 +35,7 @@ public class Server extends SRSocket {
 
     public Server() throws IOException {
         super("Server, Socket 'R'", RECEIVE_PORT, InetAddress.getLocalHost());
+        System.out.printf("Listening on: %s\n", InetAddress.getLocalHost());
         controller = new TransferController();
     }
 

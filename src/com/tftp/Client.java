@@ -375,9 +375,15 @@ public class Client extends SRSocket {
                     break;
                 }
 
-                String ip = client.getInput("Please enter the IP of the destination: ");
-                while (!IPAddress.isValidIP(ip))  {
-                    ip = client.getInput("Please enter the IP of the destination: ");
+                System.out.printf("Your local IP address is: %s\n", InetAddress.getLocalHost().getHostAddress());
+                System.out.println("If you would like to have your destination IP as yours, type \"localhost\".\n");
+                String ip = client.getInput("Please enter the IP of the destination: ").toLowerCase();
+                while (!ip.equals("localhost") && !IPAddress.isValidIP(ip))  {
+                    ip = client.getInput("Please enter the IP of the destination: ").toLowerCase();
+                }
+
+                if (ip.equals("localhost")) {
+                    ip = InetAddress.getLocalHost().getHostAddress();
                 }
 
                 String newTransfer = "y";
