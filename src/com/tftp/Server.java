@@ -3,6 +3,7 @@ package com.tftp;
 import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
+import java.net.InetAddress;
 import java.util.Scanner;
 import java.util.ArrayList;
 
@@ -33,8 +34,7 @@ public class Server extends SRSocket {
 	public static boolean verbose;
 
     public Server() throws IOException {
-        super("Server, Socket 'R'", RECEIVE_PORT);
-        System.out.println(getLocalAddress());
+        super("Server, Socket 'R'", RECEIVE_PORT, InetAddress.getLocalHost());
         controller = new TransferController();
     }
 
