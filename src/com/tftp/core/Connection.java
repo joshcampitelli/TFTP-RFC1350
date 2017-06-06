@@ -16,6 +16,7 @@ import com.tftp.io.FileTransfer;
 
 import java.net.DatagramPacket;
 import java.io.IOException;
+import java.net.InetAddress;
 
 /**
  * Connection allows for the dedicated thread birth for a new transfer request to be serviced. Connection containsKey
@@ -38,7 +39,7 @@ public class Connection extends SRSocket implements Runnable {
     private boolean active = true;
 
     public Connection(Server server, DatagramPacket packet) throws IOException {
-        super(String.format("Connection (Client TID: %d)", packet.getPort()));
+        super(String.format("Connection (Client TID: %d)", packet.getPort()), 0, InetAddress.getLocalHost());
         this.server = server;
         this.request = packet;
         this.TID = getPort();

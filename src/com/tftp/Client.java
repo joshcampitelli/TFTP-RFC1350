@@ -96,6 +96,7 @@ public class Client extends SRSocket {
 
             inform(packet, "Sending Packet", true);
             send(packet);
+            System.out.printf("[IMPORTANT] Sent Read request to server for file '%s'!\n", new String(filename));
 
             DatagramPacket response = waitForPacket(packet);
             if (response == null) {
@@ -124,6 +125,7 @@ public class Client extends SRSocket {
 
             inform(packet, "Sending Packet", true);
             send(packet);
+            System.out.printf("[IMPORTANT] Sent Write request to server for file '%s'!\n", new String(filename));
 
             DatagramPacket response = waitForPacket(packet);
             if (response == null) {
@@ -244,7 +246,6 @@ public class Client extends SRSocket {
 
         Packet dataPacket;
         this.block = 0;
-
         while (true) {
             if (response == null) {
                 System.out.println("ACK Packet was never Received.");
@@ -375,7 +376,7 @@ public class Client extends SRSocket {
                     break;
                 }
 
-                System.out.printf("Your local IP address is: %s\n", InetAddress.getLocalHost().getHostAddress());
+                System.out.printf("Your IP address is: %s\n", InetAddress.getLocalHost().getHostAddress());
                 System.out.println("If you would like to have your destination IP as yours, type \"localhost\".\n");
                 String ip = client.getInput("Please enter the IP of the destination: ").toLowerCase();
                 while (!ip.equals("localhost") && !IPAddress.isValidIP(ip))  {
