@@ -1,0 +1,13 @@
+Project demonstration of 29/05/2017:
+
+Some comments from the TA:
+It should be added a print out of the block number in the client's side. 
+Add an access violation error display message for the user. 
+Add the function to quit from verbose mode and stop the transferring file process, using the “q” key. 
+Add a shout down function in the client at the instance of deciding a reading or writing process. 
+Add a quit message when “q” is chosen. 
+Add a simulation option to lost a package for iteration 4.
+Add duplicate package handing. 
+“Transfer complete” message could be improved with more details. 
+Add an acknowledge block number message. 
+Add an error disk full message instead of access violation. 
