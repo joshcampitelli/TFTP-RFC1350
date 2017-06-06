@@ -1,0 +1,41 @@
+18/05/2017
+
+
+SYSC3303 – Iteration 3 tasks:
+
+1)- Handling errors 1 (file not found), 2 (write access violation), 3 (disk full), 6 (file already exists), and confirm errors 4 (illegal TFTP operation) and 5 (unknown transfer ID). 
+2)- specify messages for each error to be displayed to the client's user.
+3)- Modify FileTransfer to select to allow any directory to be chosen and specified, and check if a file exists. 
+4)- Handle and categorize all I/O errors in connection.java. 
+5)- Define and integrate all I/O errors packets in packet.java. 
+6)- Complete the interface to entering errors to simulate in the Error Simulator. 
+7) Allow the client to remain connected after a complete transfer, so more transfers might be processed, requesting new file transfer to the client in loop. The system should ask “do you want to transfer another file?” to the client's user. If no, the user would be asked to read a file from the server or not. If the answer is no, the connection should be closed. 
+8)- Improve the codes in client and server sides. 
+9)- Improve the packet handling code. 
+10)- Create timing diagrams
+11)- Create UML diagrams. 
+12)- Improve the Error Simulator code. 
+13)- Improve documentation. 
+
+Handling errors specifications: 
+For overrriding a file, the server we will dynamically rename the file as neccessary before the file is transmitted. 
+For disk full, the server will be kept working to inform new clients in future connections and to offer the chance to clients to read a file.
+During a file transfer if a disk is full, the client will be notified and the temporal file deleted on the server's side. 
+If the file is not found in the client's side, the client'user will be notified and invited to enter a new file name.   
+If the file is not found by the server, the server will inform the error to the client as well.
+If a host is transferring a file to the other host (client or server) and there is an access violation problem, an error packet should be sent and the connection closed.  
+The list of errors to handle are:
+0: Unknown error or no error. User's message: “Error: Unknown error. ”. 
+1: File not found . User's message: “Error: File not found. “.
+2: Access violation. User's message: “Error: Access violation.”.
+3: Disk full. User's message: “Error: Disk full. “.
+4: Illegal TFTP operation. User's message: “Error: Illegal TFTP operation. “.
+5: Unknown transfer ID. User's message: “Error: Unknown transfer ID. “.
+6: File already exists. User's message: “Error: File already exists. “. 
+
+Division of tasks:
+Joshua: 1, 4, 8
+Ahmed K.: 10, 2,7
+Dario: 6, 13, 11. 
+Ahmed S.: 12,  3
+Brian: 5, 9
