@@ -27,7 +27,8 @@ import com.tftp.simulation.modifications.PacketModification;
 public class MutableSession extends SRSocket implements Runnable {
 
     private ErrorSimulator simulator;
-    private int client, server;
+    private InetAddress client, server;
+    private int clientPort, serverPort;
     private boolean active = true;
 
 
@@ -37,14 +38,18 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int source) throws IOException, InterruptedException {
-        super(String.format("Mutable Session (client tid: %d)", source));
+    public MutableSession(ErrorSimulator simulator, DatagramPacket request, int clientPort) throws IOException, InterruptedException {
+        super(String.format("Mutable Session (client tid: %d)", clientPort));
         int SERVER_PORT = 69;
 
-        this.client = source;
-        this.simulator = simulator;
-        this.destination = SERVER_PORT;
+        this.client = request.getAddress();
+        this.clientPort = clientPort;
+        this.server = InetAddress.getLocalHost();
+        this.serverPort = SERVER_PORT;
+        this.destination = this.server;
+        this.destinationPort = this.serverPort;
 
+        this.simulator = simulator;
         DatagramPacket response = calibrate(request);
         inform(response, "Sending Packet");
         send(response);
@@ -65,14 +70,14 @@ public class MutableSession extends SRSocket implements Runnable {
 
         DatagramPacket server = receive();
         inform(server, "Received Packet");
-        this.server = server.getPort();
+        this.serverPort = server.getPort();
 
         return simulator.produceFrom(server, client.getPort(), client.getAddress());
     }
 
-    private void intercept(DatagramPacket packet, Modification modification, int destination) throws IOException, InterruptedException {
+    private void intercept(DatagramPacket packet, Modification modification, InetAddress address, int destination) throws IOException, InterruptedException {
         if (modification instanceof PacketModification) {
-            mutate(packet, (PacketModification) modification, destination);
+            mutate(packet, (PacketModification) modification, address, destination);
         } else {
             network(packet, (NetworkModification) modification, destination);
         }
@@ -114,13 +119,14 @@ public class MutableSession extends SRSocket implements Runnable {
             send(retransmitted);
 
             this.destination = (this.destination == this.server) ? this.client : this.server;
+            this.destinationPort = (this.destinationPort == this.serverPort) ? this.clientPort : this.serverPort;
 
             DatagramPacket response = receive();
-            response = simulator.produceFrom(response, this.destination, InetAddress.getLocalHost());
+            response = simulator.produceFrom(response, this.destinationPort, this.destination);
             inform(response, "Sending retransmitted Packet");
 
             DatagramPacket response2 = receive();
-            response2 = simulator.produceFrom(response2, this.destination, InetAddress.getLocalHost());
+            response2 = simulator.produceFrom(response2, this.destinationPort, InetAddress.getLocalHost());
             inform(response2, "Sending retransmitted Packet");
 
             send(response);
@@ -140,13 +146,14 @@ public class MutableSession extends SRSocket implements Runnable {
 
         if (type == PacketTypes.DATA) {
             this.destination = (this.destination == this.server) ? this.client : this.server;
+            this.destinationPort = (this.destinationPort == this.serverPort) ? this.clientPort : this.serverPort;
 
             DatagramPacket response = receive();
-            response = simulator.produceFrom(response, this.destination, InetAddress.getLocalHost());
+            response = simulator.produceFrom(response, this.destinationPort, this.destination);
             inform(response, "Sending retransmitted Packet");
 
             DatagramPacket response2 = receive();
-            response2 = simulator.produceFrom(response2, this.destination, InetAddress.getLocalHost());
+            response2 = simulator.produceFrom(response2, this.destinationPort, this.destination);
             inform(response2, "Sending retransmitted Packet");
 
             send(response);
@@ -167,12 +174,12 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private void mutate(DatagramPacket packet, PacketModification modification, int destination) throws IOException {
+    private void mutate(DatagramPacket packet, PacketModification modification, InetAddress address, int port) throws IOException {
         if (modification.getErrorId() == TFTPError.UNKNOWN_TRANSFER_ID) {
-            simulateInvalidTID(packet, destination);
+            simulateInvalidTID(packet, address, port);
             active = false;
         } else if (modification.getErrorId() == TFTPError.ILLEGAL_TFTP_OPERATION) {
-            simulateIllegalTftpOperation(packet, modification, destination);
+            simulateIllegalTftpOperation(packet, modification, port);
         }
     }
 
@@ -185,10 +192,10 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private void simulateInvalidTID(DatagramPacket packet, int dest) throws IOException {
-        SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (server id: %d)", dest));
+    private void simulateInvalidTID(DatagramPacket packet, InetAddress inet, int port) throws IOException {
+        SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (server id: %d)", port));
 
-        DatagramPacket destination = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
+        DatagramPacket destination = simulator.produceFrom(packet, port, InetAddress.getLocalHost());
         temp.inform(destination, "Sending Packet");
         temp.send(destination);
 
@@ -196,8 +203,9 @@ public class MutableSession extends SRSocket implements Runnable {
         temp.inform(response, "Received Packet");
         temp.close();
 
-        dest = dest == this.client ? this.server : this.client;
-        DatagramPacket result = simulator.produceFrom(response, dest, InetAddress.getLocalHost());
+        port = port == this.clientPort ? this.serverPort : this.clientPort;
+        inet = inet == this.client ? this.server : this.client;
+        DatagramPacket result = simulator.produceFrom(response, port, inet);
         inform(result, "Sending Response");
         send(result);
     }
@@ -265,23 +273,25 @@ public class MutableSession extends SRSocket implements Runnable {
 
     private void process(DatagramPacket packet) throws IOException, InterruptedException{
         if (simulator.isTargetPacket(packet)) {
-            intercept(packet, simulator.dequeue(), destination);
+            intercept(packet, simulator.dequeue(), destination, destinationPort);
         } else {
-            DatagramPacket recipient = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+            DatagramPacket recipient = simulator.produceFrom(packet, destinationPort, destination);
             inform(recipient, "Sending Packet");
             send(recipient);
         }
 
         destination = (destination == this.server) ? this.client : this.server;
+        destinationPort = (destinationPort == this.serverPort) ? this.clientPort : this.serverPort;
     }
 
-    private int destination;
+    private InetAddress destination;
+    private int destinationPort;
 
     @Override
     public void run() {
         try {
             destination = this.server;
-
+            destinationPort = this.serverPort;
             while (active) {
                 DatagramPacket packet = receive();
                 inform(packet, "Received Packet");
