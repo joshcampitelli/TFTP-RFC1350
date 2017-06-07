@@ -51,6 +51,9 @@ public class MutableSession extends SRSocket implements Runnable {
 
         this.simulator = simulator;
         DatagramPacket response = calibrate(request);
+        if (response == null) {
+        	return;
+        }
         inform(response, "Sending Packet");
         send(response);
     }
@@ -67,12 +70,15 @@ public class MutableSession extends SRSocket implements Runnable {
      */
     private DatagramPacket calibrate(DatagramPacket client) throws IOException, InterruptedException {
         process(client);
-
-        DatagramPacket server = receive();
-        inform(server, "Received Packet");
-        this.serverPort = server.getPort();
-
-        return simulator.produceFrom(server, client.getPort(), client.getAddress());
+        try {
+	        DatagramPacket server = receive(500);
+	        inform(server, "Received Packet");
+	        this.serverPort = server.getPort();
+	
+	        return simulator.produceFrom(server, client.getPort(), client.getAddress());
+        } catch (SocketTimeoutException ex) {
+        	return null;
+        }
     }
 
     private void intercept(DatagramPacket packet, Modification modification, InetAddress address, int destination) throws IOException, InterruptedException {
@@ -107,7 +113,12 @@ public class MutableSession extends SRSocket implements Runnable {
     }
 
     private void delay(DatagramPacket packet, PacketTypes type, int port) throws InterruptedException, IOException {
-        Thread.sleep(6000);
+        if (type == PacketTypes.RRQ || type == PacketTypes.WRQ) {
+        	active = false;
+        	return;
+        }
+        
+    	Thread.sleep(6000);
         DatagramPacket dispatch = simulator.produceFrom(packet, port, this.destination);
         inform(dispatch, "Sending Packet");
 
