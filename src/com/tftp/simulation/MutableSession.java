@@ -100,6 +100,7 @@ public class MutableSession extends SRSocket implements Runnable {
                     // it will resend the DATA packet. This statement effectively keeps this.destination
                     // to the same value after it returns to process()
                     this.destination = (this.destination == this.server) ? this.client : this.server;
+                    this.destinationPort = (this.destinationPort == this.serverPort) ? this.clientPort : this.serverPort;
                 }
                 break;
         }
@@ -179,7 +180,7 @@ public class MutableSession extends SRSocket implements Runnable {
             simulateInvalidTID(packet, address, port);
             active = false;
         } else if (modification.getErrorId() == TFTPError.ILLEGAL_TFTP_OPERATION) {
-            simulateIllegalTftpOperation(packet, modification, port);
+            simulateIllegalTftpOperation(packet, modification, address, port);
         }
     }
 
@@ -218,7 +219,7 @@ public class MutableSession extends SRSocket implements Runnable {
      *
      * @throws IOException
      */
-    private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, int dest) throws IOException {
+    private void simulateIllegalTftpOperation(DatagramPacket packet, PacketModification modification, InetAddress address, int dest) throws IOException {
         switch (modification.getErrorType()) {
             case ErrorSimulator.SIMULATE_INVALID_OPCODE:
 
@@ -246,7 +247,7 @@ public class MutableSession extends SRSocket implements Runnable {
                 break;
         }
 
-        packet = simulator.produceFrom(packet, dest, InetAddress.getLocalHost());
+        packet = simulator.produceFrom(packet, dest, address);
         inform(packet, "Sending Packet", true);
         send(packet);
     }
