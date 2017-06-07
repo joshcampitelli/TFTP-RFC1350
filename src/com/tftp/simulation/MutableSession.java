@@ -79,11 +79,11 @@ public class MutableSession extends SRSocket implements Runnable {
         if (modification instanceof PacketModification) {
             mutate(packet, (PacketModification) modification, address, destination);
         } else {
-            network(packet, (NetworkModification) modification, destination);
+            network(packet, (NetworkModification) modification, address, destination);
         }
     }
 
-    private void network(DatagramPacket packet, NetworkModification modification, int destination) throws IOException, InterruptedException {
+    private void network(DatagramPacket packet, NetworkModification modification, InetAddress address, int destination) throws IOException, InterruptedException {
         switch (modification.getErrorType()) {
             case ErrorSimulator.SIMULATE_DELAYED_PACKET:
                 delay(packet, modification.getPacketType(), destination);
@@ -91,7 +91,7 @@ public class MutableSession extends SRSocket implements Runnable {
             case ErrorSimulator.SIMULATE_DUPLICATED_PACKET:
 
                 // send the packet twice
-                duplicate(packet, modification.getPacketType(), destination);
+                duplicate(packet, modification.getPacketType(), address, destination);
                 break;
             case ErrorSimulator.SIMULATE_LOST_PACKET:
                 if (modification.getPacketType() == PacketTypes.DATA) {
@@ -106,14 +106,14 @@ public class MutableSession extends SRSocket implements Runnable {
         }
     }
 
-    private void delay(DatagramPacket packet, PacketTypes type, int destination) throws InterruptedException, IOException {
+    private void delay(DatagramPacket packet, PacketTypes type, int port) throws InterruptedException, IOException {
         Thread.sleep(6000);
-        DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+        DatagramPacket dispatch = simulator.produceFrom(packet, port, this.destination);
         inform(dispatch, "Sending Packet");
 
         if (isDominantPacket(type)) {
             DatagramPacket retransmitted = receive();
-            retransmitted = simulator.produceFrom(retransmitted, destination, InetAddress.getLocalHost());
+            retransmitted = simulator.produceFrom(retransmitted, port, this.destination);
             inform(retransmitted, "Sending retransmitted Packet");
 
             send(dispatch);
@@ -127,7 +127,7 @@ public class MutableSession extends SRSocket implements Runnable {
             inform(response, "Sending retransmitted Packet");
 
             DatagramPacket response2 = receive();
-            response2 = simulator.produceFrom(response2, this.destinationPort, InetAddress.getLocalHost());
+            response2 = simulator.produceFrom(response2, this.destinationPort, this.destination);
             inform(response2, "Sending retransmitted Packet");
 
             send(response);
@@ -137,8 +137,8 @@ public class MutableSession extends SRSocket implements Runnable {
         }
     }
 
-    private void duplicate(DatagramPacket packet, PacketTypes type, int destination) throws IOException {
-        DatagramPacket dispatch = simulator.produceFrom(packet, destination, InetAddress.getLocalHost());
+    private void duplicate(DatagramPacket packet, PacketTypes type, InetAddress address, int destination) throws IOException {
+        DatagramPacket dispatch = simulator.produceFrom(packet, destination, address);
         inform(dispatch, "Sending Packet");
         inform(dispatch, "Sending Duplicate Packet");
 
@@ -196,7 +196,7 @@ public class MutableSession extends SRSocket implements Runnable {
     private void simulateInvalidTID(DatagramPacket packet, InetAddress inet, int port) throws IOException {
         SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (server id: %d)", port));
 
-        DatagramPacket destination = simulator.produceFrom(packet, port, InetAddress.getLocalHost());
+        DatagramPacket destination = simulator.produceFrom(packet, port, inet);
         temp.inform(destination, "Sending Packet");
         temp.send(destination);
 
@@ -293,6 +293,7 @@ public class MutableSession extends SRSocket implements Runnable {
         try {
             destination = this.server;
             destinationPort = this.serverPort;
+
             while (active) {
                 DatagramPacket packet = receive();
                 inform(packet, "Received Packet");
