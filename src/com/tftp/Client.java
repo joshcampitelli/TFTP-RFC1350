@@ -1,12 +1,9 @@
 package com.tftp;
 
-import java.util.Scanner;
-
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.io.IOException;
 
-import com.tftp.core.SRSocket;
+import com.tftp.core.Socket;
 import com.tftp.core.protocol.*;
 import com.tftp.core.protocol.packets.*;
 import com.tftp.exceptions.AccessViolationException;
@@ -23,7 +20,7 @@ import com.tftp.io.FileTransfer;
  * @author Josh Campitelli, Ahmed Sakr, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
-public class Client extends SRSocket {
+public class Client extends Socket {
 
     private int block;
     private boolean isNormal = true;
@@ -35,19 +32,6 @@ public class Client extends SRSocket {
 
     public Client() throws IOException {
         super("Client");
-    }
-
-    /**
-     * Scans the console for user input.
-     *
-     * @param text the text to display when prompting the user for input
-     * @return the user input as a string
-     */
-    private String getInput(String text) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.printf(text);
-
-        return scanner.nextLine();
     }
 
     /**
@@ -72,7 +56,7 @@ public class Client extends SRSocket {
      * @throws IOException
      * @throws UnknownIOModeException
      */
-    private void transfer(byte[] filename, byte[] mode, String ip, String requestType) throws IOException, UnknownIOModeException {
+    public void transfer(byte[] filename, byte[] mode, String ip, String requestType) throws IOException, UnknownIOModeException {
         int port = TFTPConfig.SERVER_PORT;
         if (!this.isNormal) {
             port = TFTPConfig.SIMULATOR_PORT;
@@ -299,7 +283,7 @@ public class Client extends SRSocket {
     }
 
     /**
-     * The checkPacket method calls the validatePacket on SRSocket which detects packet errors, this method then
+     * The checkPacket method calls the validatePacket on Socket which detects packet errors, this method then
      * determines whether there was an error and returns the type. It also makes a call to the errorDetected method.
      *
      * @param received    the DatagramPacket which is being tested for errors.
@@ -349,69 +333,6 @@ public class Client extends SRSocket {
             //Received something other than an ACK or ERROR Packet, return an error 4 Packet to indicate corrupted stream
             String errorMsg = "Incorrect Packet Received";
             send(new ERRORPacket(errorPacket, TFTPError.ILLEGAL_TFTP_OPERATION, errorMsg.getBytes()).getDatagram());
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-            Client client = new Client();
-            FileTransfer.setup(FileTransfer.CLIENT_DIRECTORY);
-            System.out.println("Input 'q' during any instruction to quit.");
-            while (true) {
-                String dataMode = client.getInput("The Client is set to normal. Would you like to set it to test? (y/N) ");
-                if (dataMode.toLowerCase().equals("y")) {
-                    client.setNormal(false);
-                } else if (dataMode.toLowerCase().equals("q")) {
-                    break;
-                }
-
-                String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
-                if (verbosity.toLowerCase().equals("y")) {
-                    TFTPConfig.CLIENT_VERBOSE = true;
-                } else if (verbosity.toLowerCase().equals("q")) {
-                    break;
-                }
-
-                System.out.printf("Your IP address is: %s\n", InetAddress.getLocalHost().getHostAddress());
-                System.out.println("If you would like to have your destination IP as yours, type \"localhost\".\n");
-                String ip = client.getInput("Please enter the IP of the destination: ").toLowerCase();
-                while (!ip.equals("localhost") && !IPAddress.isValidIP(ip))  {
-                    ip = client.getInput("Please enter the IP of the destination: ").toLowerCase();
-                }
-
-                if (ip.equals("localhost")) {
-                    ip = InetAddress.getLocalHost().getHostAddress();
-                }
-
-                String newTransfer = "y";
-                String requestType = "";
-                while (newTransfer.equalsIgnoreCase("y")) {
-                    requestType = "";
-                    while (!(requestType.toLowerCase().equals("r") || requestType.toLowerCase().equals("w") || requestType.toLowerCase().equals("q"))) {
-                        requestType = client.getInput("Would you like to Write or Read? (W/R) ");
-                    }
-                    if (requestType.toLowerCase().equals("q")) {
-                        break;
-                    }
-
-                    byte[] filename = client.getInput("Enter file name: ").getBytes();
-                    byte[] mode = "octet".getBytes();
-                    client.transfer(filename, mode, ip, requestType);
-                    client.close();
-
-                    client = new Client();
-                    client.setNormal(!dataMode.toLowerCase().equals("y"));
-
-                    newTransfer = client.getInput("Would you like to start a new transfer? (y/N) ");
-                }
-                if (requestType.toLowerCase().equals("q") || !newTransfer.equalsIgnoreCase("y")) {
-                    break;
-                }
-            }
-            client.close();
-            System.out.println("Client closed");
-        } catch (IOException | UnknownIOModeException e) {
-            e.printStackTrace();
         }
     }
 }

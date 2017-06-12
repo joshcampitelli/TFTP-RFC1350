@@ -28,7 +28,7 @@ import java.net.InetAddress;
  * @author Ahmed Sakr, Josh Campitelli, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
-public class Connection extends SRSocket implements Runnable {
+public class Connection extends Socket implements Runnable {
 
     private DatagramPacket request;
     private FileTransfer fileTransfer;

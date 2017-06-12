@@ -7,15 +7,13 @@ import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.io.IOException;
 
-import com.tftp.Client;
-import com.tftp.Server;
 import com.tftp.TFTPConfig;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.Packet.PacketTypes;
 
 /**
- * SRSocket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
+ * Socket is a wrapper class of DatagramSocket that allows for easier use of the networking interface by abstracting
  * much of the exhaustive setup. Moreover, it also adds helpful and constantly used methods on top of the interface.
  *
  * Course: Real Time Concurrent Systems
@@ -24,22 +22,22 @@ import com.tftp.core.protocol.Packet.PacketTypes;
  * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
-public class SRSocket extends DatagramSocket {
+public class Socket extends DatagramSocket {
 
     private String name;
     private static int TIMEOUT_TIME = 5000; //MilliSeconds to wait before retransmitting a packet
     private static int RETRANSMIT_NUM = 3; //Number of times to retransmit a packet
 
-    public SRSocket(String name) throws IOException {
+    public Socket(String name) throws IOException {
         super();
         this.name = name;
     }
 
-    public SRSocket(String name, int port) throws IOException {
+    public Socket(String name, int port) throws IOException {
         this(name, port, InetAddress.getLocalHost());
     }
 
-    public SRSocket(String name, int port, InetAddress address) throws IOException {
+    public Socket(String name, int port, InetAddress address) throws IOException {
         super(port, address);
         this.name = name;
     }

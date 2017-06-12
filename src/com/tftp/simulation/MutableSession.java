@@ -7,8 +7,7 @@ import java.net.InetAddress;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
-import com.tftp.core.SRSocket;
-import com.tftp.core.protocol.Packet;
+import com.tftp.core.Socket;
 import com.tftp.core.protocol.Packet.PacketTypes;
 import com.tftp.core.protocol.TFTPError;
 import com.tftp.simulation.modifications.NetworkModification;
@@ -24,7 +23,7 @@ import com.tftp.simulation.modifications.PacketModification;
  * @author Ahmed Sakr, Brian Zhang, Josh Campitelli, Ahmed Khattab, Dario Luzuriaga
  * @since May the 14th, 2017.
  */
-public class MutableSession extends SRSocket implements Runnable {
+public class MutableSession extends Socket implements Runnable {
 
     private ErrorSimulator simulator;
     private InetAddress client, server;
@@ -205,7 +204,7 @@ public class MutableSession extends SRSocket implements Runnable {
      * @throws IOException
      */
     private void simulateInvalidTID(DatagramPacket packet, InetAddress inet, int port) throws IOException {
-        SRSocket temp = new SRSocket(String.format("InvalidTID Simulation (server id: %d)", port));
+        Socket temp = new Socket(String.format("InvalidTID Simulation (server id: %d)", port));
 
         DatagramPacket destination = simulator.produceFrom(packet, port, inet);
         temp.inform(destination, "Sending Packet");

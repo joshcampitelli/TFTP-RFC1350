@@ -15,9 +15,15 @@ public class TFTPConfig {
     // the nominal port that the main server port listens on
     public static final int SERVER_PORT = 69;
 
-    // the default verbose setting for the client, not final to allow for mutation
+    // the default verbose setting for the client
     public static boolean CLIENT_VERBOSE = false;
 
-    // the default verbose setting for the server, not final to allow for mutation
+    // the default verbose setting for the server
     public static boolean SERVER_VERBOSE = false;
+
+    // the default server directory for data
+    public static String SERVER_DIRECTORY = "/data/server/";
+
+    // the default client directory for data
+    public static String CLIENT_DIRECTORY = "/data/client/";
 }

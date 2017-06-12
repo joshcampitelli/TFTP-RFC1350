@@ -5,7 +5,7 @@ import java.net.InetAddress;
 import java.util.LinkedList;
 import java.util.Scanner;
 import java.io.IOException;
-import com.tftp.core.SRSocket;
+import com.tftp.core.Socket;
 import com.tftp.core.protocol.Packet.PacketTypes;
 import com.tftp.simulation.modifications.NetworkModification;
 import com.tftp.simulation.modifications.PacketModification;
@@ -25,7 +25,7 @@ import com.tftp.workers.SimulatorListener;
  * @author Ahmed Sakr, Josh Campitelli, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
-public class ErrorSimulator extends SRSocket {
+public class ErrorSimulator extends Socket {
 
     private static int RECEIVE_PORT = 23;
     private final LinkedList<Modification> modifications;

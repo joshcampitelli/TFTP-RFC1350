@@ -4,17 +4,12 @@ import java.net.DatagramPacket;
 import java.io.IOException;
 import java.lang.Thread;
 import java.net.InetAddress;
-import java.util.Scanner;
-import java.util.ArrayList;
 
-import com.tftp.core.SRSocket;
+import com.tftp.core.Socket;
 import com.tftp.core.Connection;
-import com.tftp.core.protocol.IPAddress;
-import com.tftp.io.FileTransfer;
 import com.tftp.io.TransferController;
 import com.tftp.workers.QuitListener;
 import com.tftp.exceptions.InvalidPacketException;
-import java.net.SocketException;
 
 /**
  * Server is the main worker and host of all the TFTP operations. Server is equipped with multi-threading to helpful
@@ -26,7 +21,7 @@ import java.net.SocketException;
  * @author Ahmed Sakr, Josh Campitelli, Brian Zhang, Ahmed Khattab, Dario Luzuriaga
  * @since May the 1st, 2017.
  */
-public class Server extends SRSocket {
+public class Server extends Socket {
 
     private int threadNumber;
     private TransferController controller;
@@ -48,24 +43,12 @@ public class Server extends SRSocket {
 
 
     /**
-     * Prints instructions on the console and retrieves input from the user.
-     *
-     * @return the new-line terminated input
-     */
-    public String getInput(String text) {
-    	 Scanner scanner = new Scanner(System.in);
-    	 System.out.printf(text);
-
-    	 return scanner.nextLine();
-    }
-
-    /**
      * Attempts to establish a connection for the received packet. If the packet has been determined to be invalid,
      * an InvalidPacketException is thrown.
      *
      * @throws InvalidPacketException If the packet has been found to be illegal. Critical error.
      */
-    public void establish(DatagramPacket packet) throws IOException {
+    private void establish(DatagramPacket packet) throws IOException {
         Connection connection = new Connection(this, packet);
         Thread thread = new Thread(connection, "Connection" + threadNumber++);
         thread.start();
@@ -98,28 +81,5 @@ public class Server extends SRSocket {
      */
     public void shutdown() {
         close();
-    }
-
-    public static void main(String[] args) {
-        Server server = null;
-
-        try {
-            server = new Server();
-            FileTransfer.setup(FileTransfer.SERVER_DIRECTORY);
-
-            String verbosity = server.getInput("The Server is set to quiet. Would you like to set it to verbose? (y/N) ");
-            if (verbosity.toLowerCase().equals("y")) {
-                TFTPConfig.SERVER_VERBOSE = true;
-            }
-
-            server.launch();
-        } catch (SocketException e) {
-            System.out.printf("Shutdown successful: no more incoming connections to be serviced...\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidPacketException e) {
-            server.shutdown();
-            System.out.printf("Invalid packet encountered. Server is attempting to shutdown...\n");
-        }
     }
 }
