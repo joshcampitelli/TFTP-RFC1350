@@ -25,10 +25,6 @@ import com.tftp.io.FileTransfer;
  */
 public class Client extends SRSocket {
 
-    public static final int ERRORSIMULATOR_PORT = 23;
-    public static boolean verbose;
-
-    private int serverPort = 69;
     private int block;
     private boolean isNormal = true;
     private FileTransfer fileTransfer;
@@ -77,9 +73,9 @@ public class Client extends SRSocket {
      * @throws UnknownIOModeException
      */
     private void transfer(byte[] filename, byte[] mode, String ip, String requestType) throws IOException, UnknownIOModeException {
-        int port = serverPort;
+        int port = TFTPConfig.SERVER_PORT;
         if (!this.isNormal) {
-            port = ERRORSIMULATOR_PORT;
+            port = TFTPConfig.SIMULATOR_PORT;
         }
 
         Packet packet;
@@ -164,7 +160,7 @@ public class Client extends SRSocket {
                 break;
             }
 
-            serverPort = response.getPort();
+            connectionTID = response.getPort();
             inform(response, "Packet Received", true);
 
             if (Packet.getPacketType(response) == Packet.PacketTypes.DATA) {
@@ -203,7 +199,7 @@ public class Client extends SRSocket {
                 fileTransfer.write(data);
 
                 ackPacket = new ACKPacket(response, BlockNumber.getBlockNumber(block));
-                ackPacket.getDatagram().setPort(serverPort);
+                ackPacket.getDatagram().setPort(connectionTID);
 
                 inform(ackPacket, "Sending Packet", true);
                 send(ackPacket);
@@ -252,7 +248,7 @@ public class Client extends SRSocket {
                 break;
             }
 
-            serverPort = response.getPort();
+            connectionTID = response.getPort();
             inform(response, "Packet Received", true);
             //Ensure the packet received from the server is of type ACK
             if (Packet.getPacketType(response) == Packet.PacketTypes.ACK) {
@@ -282,7 +278,7 @@ public class Client extends SRSocket {
                 data = shrink(data, fileTransfer.lastBlockSize());
 
                 dataPacket = new DATAPacket(response, BlockNumber.getBlockNumber(block), data);
-                dataPacket.getDatagram().setPort(serverPort);
+                dataPacket.getDatagram().setPort(connectionTID);
 
                 inform(dataPacket, "Sending Packet", true);
                 send(dataPacket);
@@ -371,7 +367,7 @@ public class Client extends SRSocket {
 
                 String verbosity = client.getInput("The Client is set to quiet. Would you like to set it to verbose? (y/N) ");
                 if (verbosity.toLowerCase().equals("y")) {
-                    verbose = true;
+                    TFTPConfig.CLIENT_VERBOSE = true;
                 } else if (verbosity.toLowerCase().equals("q")) {
                     break;
                 }

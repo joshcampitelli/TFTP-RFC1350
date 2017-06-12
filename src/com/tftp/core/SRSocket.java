@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import com.tftp.Client;
 import com.tftp.Server;
+import com.tftp.TFTPConfig;
 import com.tftp.core.protocol.BlockNumber;
 import com.tftp.core.protocol.Packet;
 import com.tftp.core.protocol.Packet.PacketTypes;
@@ -118,7 +119,7 @@ public class SRSocket extends DatagramSocket {
     }
 
     public void inform(DatagramPacket packet, String event, boolean extra) {
-        if (!Client.verbose && !Server.verbose) {
+        if (!TFTPConfig.CLIENT_VERBOSE && !TFTPConfig.SERVER_VERBOSE) {
             return;
         }
 

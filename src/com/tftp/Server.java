@@ -30,11 +30,9 @@ public class Server extends SRSocket {
 
     private int threadNumber;
     private TransferController controller;
-    public static int RECEIVE_PORT = 69;
-	public static boolean verbose;
 
     public Server() throws IOException {
-        super("Server, Socket 'R'", RECEIVE_PORT, InetAddress.getLocalHost());
+        super("Server, Socket 'R'", TFTPConfig.SERVER_PORT, InetAddress.getLocalHost());
         System.out.printf("Listening on: %s\n", InetAddress.getLocalHost());
         controller = new TransferController();
     }
@@ -111,7 +109,7 @@ public class Server extends SRSocket {
 
             String verbosity = server.getInput("The Server is set to quiet. Would you like to set it to verbose? (y/N) ");
             if (verbosity.toLowerCase().equals("y")) {
-                verbose = true;
+                TFTPConfig.SERVER_VERBOSE = true;
             }
 
             server.launch();
